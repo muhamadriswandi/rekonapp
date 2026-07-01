@@ -1,58 +1,97 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# RekonApp - Sistem Rekonsiliasi Rekening Koran Keuangan Daerah
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+RekonApp adalah aplikasi web berbasis **Laravel 11** dan **Filament v5 (Experimental/Schemas)** yang dirancang untuk melakukan proses rekonsiliasi dan pemindahbukuan mutasi rekening koran bank secara multi-tenant (Relasi Bank) secara otomatis dan terstruktur.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🚀 Fitur Utama
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 1. Multi-Tenant (Relasi Bank)
+- Sistem mendukung multi-tenant berdasarkan bank mitra pengelola kas daerah. Setiap data transaksi, periode, dan laporan terisolasi dengan aman per Relasi Bank.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 2. Impor & Klasifikasi Transaksi Otomatis
+- **Impor CSV**: Memungkinkan operator mengunggah file mutasi rekening koran bank (CSV).
+- **Otomatisasi Status**:
+  - `Raw`: Transaksi mentah pasca impor.
+  - `Verified`: Sistem mendeteksi **Kanal Pembayaran** & **Jenis Penerimaan** secara otomatis melalui pola *Regex* yang dikonfigurasi, lalu membuat entri rincian nominal secara otomatis.
+  - `Validated`: Transaksi yang sudah ditinjau dan divalidasi oleh operator.
+  - `Posted`: Transaksi yang sudah masuk dalam proses Tutup Buku (terkunci).
 
-## Learning Laravel
+### 3. Tutup Buku Bulanan (Periode Pembukuan)
+- Fasilitas penutupan buku transaksi secara berkala setiap bulan kalender penuh. Mengunci seluruh transaksi berstatus `Validated` pada bulan tersebut menjadi status `Posted`.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 4. Pindah Buku Kustom (Pindah Buku)
+- Solusi untuk rekening koran yang dipindahkan bukukan tidak berdasarkan awal/akhir bulan kalender.
+- Memungkinkan penutupan buku dengan **rentang tanggal kustom**.
+- Mendukung **pemilihan transaksi secara manual** (memilih transaksi mana yang diikutsertakan dan mana yang ditinggalkan meskipun tanggal transaksinya sama).
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 5. Laporan Keuangan & Cetak PDF Resmi
+- **Laporan Harian**: Ikhtisar harian penerimaan per instansi dan matriks Jenis Penerimaan vs Kanal Pembayaran. Dilengkapi ekspor berkas PDF formal.
+- **Laporan Penerimaan**: Laporan detail transaksi terposting (`Posted`) yang dikelompokkan berdasarkan **Jenis Penerimaan**, diurutkan kronologis tanggal, dilengkapi subtotal per kelompok, dan tombol **Cetak PDF**.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### 6. Pusat Bantuan (Panduan Penggunaan)
+- Halaman dokumentasi terintegrasi di panel admin yang dirancang menggunakan kartu grid Tailwind CSS interaktif untuk memudahkan pemahaman seluruh alur sistem.
 
-## Agentic Development
+---
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## 🛠️ Tech Stack & Requirements
 
+- **PHP** >= 8.2 (Tested on PHP 8.4)
+- **Laravel** 11.x
+- **Filament** v5 (experimental schemas branch)
+- **Database**: MySQL / SQLite (untuk pengujian)
+- **DomPDF** (untuk pencetakan PDF)
+- **Pest PHP** (untuk testing)
+
+---
+
+## ⚙️ Instalasi & Konfigurasi
+
+### 1. Clone & Install Dependencies
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone <url_repo>
+cd rekonapp
+composer install
+npm install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 2. Setup Environment File
+Salin file `.env.example` menjadi `.env` dan atur konfigurasi database Anda:
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-## Contributing
+### 3. Jalankan Migrasi & Seeder
+Jalankan migrasi database serta seed data master awal dan dummy data transaksi pengujian:
+```bash
+php artisan migrate --seed
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 4. Konfigurasi Aset & Jalankan Server Lokal
+Kompilasi aset frontend menggunakan Vite dan jalankan server pengembangan:
+```bash
+npm run build
+# atau untuk development:
+npm run dev
 
-## Code of Conduct
+php artisan serve
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## 🧪 Pengujian (Testing)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Proyek ini dilengkapi dengan cakupan pengujian unit dan fitur yang komprehensif menggunakan **Pest PHP**. Untuk menjalankan tes:
 
-## License
+```bash
+./vendor/bin/pest
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Pengujian mencakup otentikasi, otorisasi kebijakan role (Supervisor, Operator, Admin), pencetakan PDF, penyaringan filter laporan, impor CSV, otomatisasi klasifikasi, serta fitur Pindah Buku.
+
+---
+
+## 📄 Lisensi
+
+RekonApp adalah perangkat lunak open-source di bawah lisensi [MIT](LICENSE).
