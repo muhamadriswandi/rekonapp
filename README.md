@@ -1,6 +1,6 @@
 # RekonApp - Sistem Rekonsiliasi Rekening Koran Keuangan Daerah
 
-RekonApp adalah aplikasi web berbasis **Laravel 11** dan **Filament v5 (Experimental/Schemas)** yang dirancang untuk melakukan proses rekonsiliasi dan pemindahbukuan mutasi rekening koran bank secara multi-tenant (Relasi Bank) secara otomatis dan terstruktur.
+RekonApp adalah aplikasi web berbasis **Laravel 13** dan **Filament v5 (Experimental/Schemas)** yang dirancang untuk melakukan proses rekonsiliasi dan pemindahbukuan mutasi rekening koran bank secara multi-tenant (Relasi Bank) secara otomatis dan terstruktur.
 
 ---
 
@@ -37,7 +37,7 @@ RekonApp adalah aplikasi web berbasis **Laravel 11** dan **Filament v5 (Experime
 ## 🛠️ Tech Stack & Requirements
 
 - **PHP** >= 8.2 (Tested on PHP 8.4)
-- **Laravel** 11.x
+- **Laravel** 13.x
 - **Filament** v5 (experimental schemas branch)
 - **Database**: MySQL / SQLite (untuk pengujian)
 - **DomPDF** (untuk pencetakan PDF)

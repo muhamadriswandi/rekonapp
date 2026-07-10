@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\JenisPenerimaanResource\Pages;
+use App\Filament\Resources\JenisPenerimaanTreeResource\Pages;
 use App\Models\JenisPenerimaan;
 use Filament\Forms;
 use Filament\Schemas\Schema;
@@ -11,18 +11,19 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Html;
+use CodeWithDennis\FilamentSelectTree\SelectTree;
 
-class JenisPenerimaanResource extends Resource
+class JenisPenerimaanTreeResource extends Resource
 {
     protected static ?string $model = JenisPenerimaan::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-folder-open';
 
-    protected static ?string $navigationLabel = 'Jenis Penerimaan';
+    protected static ?string $navigationLabel = 'Jenis Penerimaan (Select Tree)';
 
-    protected static ?string $modelLabel = 'Jenis Penerimaan';
+    protected static ?string $modelLabel = 'Jenis Penerimaan (Select Tree)';
 
-    protected static ?string $pluralModelLabel = 'Jenis Penerimaan';
+    protected static ?string $pluralModelLabel = 'Jenis Penerimaan (Select Tree)';
 
     public static function isScopedToTenant(): bool
     {
@@ -42,11 +43,11 @@ class JenisPenerimaanResource extends Resource
                         Forms\Components\TextInput::make('nama')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\Select::make('parent_id')
-                            ->relationship('parent', 'nama', fn ($query, $record) => $record ? $query->where('id', '!=', $record->id) : $query)
-                            ->searchable()
+                        SelectTree::make('parent_id')
+                            ->relationship('parent', 'nama', 'parent_id', fn ($query, $record) => $record ? $query->where('id', '!=', $record->id) : $query)
                             ->placeholder('Pilih Kategori Induk (jika ada)')
-                            ->label('Kategori Induk'),
+                            ->label('Kategori Induk')
+                            ->enableBranchNode(),
                         Forms\Components\TextInput::make('regex_pattern')
                             ->maxLength(255)
                             ->nullable()
@@ -124,9 +125,9 @@ class JenisPenerimaanResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListJenisPenerimaans::route('/'),
-            'create' => Pages\CreateJenisPenerimaan::route('/create'),
-            'edit' => Pages\EditJenisPenerimaan::route('/{record}/edit'),
+            'index' => Pages\ListJenisPenerimaanTrees::route('/'),
+            'create' => Pages\CreateJenisPenerimaanTree::route('/create'),
+            'edit' => Pages\EditJenisPenerimaanTree::route('/{record}/edit'),
         ];
     }
 }

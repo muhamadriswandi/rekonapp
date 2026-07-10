@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 use Filament\Support\RawJs;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Actions\BulkAction;
+use CodeWithDennis\FilamentSelectTree\SelectTree;
 
 class TransaksiResource extends Resource
 {
@@ -143,10 +144,13 @@ class TransaksiResource extends Resource
                         Forms\Components\Repeater::make('rincian')
                             ->label('Rincian Penerimaan')
                             ->schema([
-                                Forms\Components\Select::make('jenis_penerimaan_id')
-                                    ->options(\App\Models\JenisPenerimaan::whereNotNull('parent_id')->pluck('nama', 'id'))
+                                SelectTree::make('jenis_penerimaan_id')
+                                    ->query(
+                                        query: fn () => \App\Models\JenisPenerimaan::query(),
+                                        titleAttribute: 'nama',
+                                        parentAttribute: 'parent_id',
+                                    )
                                     ->required()
-                                    ->searchable()
                                     ->placeholder('Pilih Jenis Penerimaan')
                                     ->label('Jenis Penerimaan'),
                                 Forms\Components\TextInput::make('nominal')
