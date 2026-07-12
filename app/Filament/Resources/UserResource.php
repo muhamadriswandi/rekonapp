@@ -14,6 +14,11 @@ use Filament\Schemas\Components\Section;
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
+    
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Pengaturan';
+    }
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-users';
 

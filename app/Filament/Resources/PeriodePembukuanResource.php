@@ -13,6 +13,11 @@ use Filament\Tables\Table;
 class PeriodePembukuanResource extends Resource
 {
     protected static ?string $model = PeriodePembukuan::class;
+    
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Transaksi';
+    }
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-calendar';
 

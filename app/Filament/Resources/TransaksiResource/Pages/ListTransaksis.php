@@ -68,7 +68,8 @@ class ListTransaksis extends ListRecords
                         ->required()
                         ->disk('local')
                         ->directory('temp-csv')
-                        ->acceptedFileTypes(['text/csv', 'text/plain', 'application/csv']),
+                        ->acceptedFileTypes(['text/csv', 'text/plain', 'application/csv'])
+                        ->preventFilePathTampering(),
                 ])
                 ->action(function (array $data) {
                     $tenantId = Filament::getTenant()->id;

@@ -14,6 +14,11 @@ class InstansiResource extends Resource
 {
     protected static ?string $model = Instansi::class;
 
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Pengaturan';
+    }
+
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-building-office';
 
     protected static ?string $navigationLabel = 'Instansi';

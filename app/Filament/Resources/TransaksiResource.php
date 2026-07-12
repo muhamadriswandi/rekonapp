@@ -19,9 +19,14 @@ class TransaksiResource extends Resource
 {
     protected static ?string $model = Transaksi::class;
 
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Transaksi';
+    }
+
     protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-banknotes';
     
-    protected static ?string $navigationLabel = 'Transaksi';
+    protected static ?string $navigationLabel = 'List Transaksi';
 
     protected static ?string $modelLabel = 'Transaksi';
 

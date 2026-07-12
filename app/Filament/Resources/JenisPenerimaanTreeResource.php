@@ -17,13 +17,18 @@ class JenisPenerimaanTreeResource extends Resource
 {
     protected static ?string $model = JenisPenerimaan::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-folder-open';
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Pengaturan';
+    }
 
-    protected static ?string $navigationLabel = 'Jenis Penerimaan (Select Tree)';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-banknotes';
 
-    protected static ?string $modelLabel = 'Jenis Penerimaan (Select Tree)';
+    protected static ?string $navigationLabel = 'Jenis Penerimaan';
 
-    protected static ?string $pluralModelLabel = 'Jenis Penerimaan (Select Tree)';
+    protected static ?string $modelLabel = 'Jenis Penerimaan';
+
+    protected static ?string $pluralModelLabel = 'Jenis Penerimaan';
 
     public static function isScopedToTenant(): bool
     {

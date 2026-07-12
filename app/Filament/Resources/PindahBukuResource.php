@@ -18,6 +18,11 @@ class PindahBukuResource extends Resource
 {
     protected static ?string $model = PindahBuku::class;
 
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Transaksi';
+    }
+
     protected static ?string $tenantRelationshipName = 'pindahBuku';
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-arrow-path';

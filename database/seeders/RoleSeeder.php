@@ -10,33 +10,49 @@ class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        $operatorRole = Role::firstOrCreate(['name' => 'Operator']);
+        // Buat semua role
+        $superadminRole = Role::firstOrCreate(['name' => 'super_admin']);
+        $operatorRole   = Role::firstOrCreate(['name' => 'Operator']);
         $supervisorRole = Role::firstOrCreate(['name' => 'Supervisor']);
 
         // Create/retrieve Operator user
         $operatorUser = User::firstOrCreate(
             ['email' => 'operator@rekonapp.com'],
             [
-                'name' => 'Operator User',
+                'name'     => 'Operator User',
                 'password' => bcrypt('password'),
             ]
         );
-        $operatorUser->assignRole($operatorRole);
+        $operatorUser->syncRoles([$operatorRole]);
 
         // Create/retrieve Supervisor user
         $supervisorUser = User::firstOrCreate(
             ['email' => 'supervisor@rekonapp.com'],
             [
-                'name' => 'Supervisor User',
+                'name'     => 'Supervisor User',
                 'password' => bcrypt('password'),
             ]
         );
-        $supervisorUser->assignRole($supervisorRole);
+        $supervisorUser->syncRoles([$supervisorRole]);
 
-        // Assign Operator role to riswandi29@gmail.com if exists
-        $adminUser = User::where('email', 'riswandi29@gmail.com')->first();
-        if ($adminUser) {
-            $adminUser->assignRole($operatorRole);
-        }
+        // Buat/ambil user riswandi29@gmail.com, reset password menjadi 'password'
+        $adminUser = User::updateOrCreate(
+            ['email' => 'riswandi29@gmail.com'],
+            [
+                'name'     => 'Riswandi Admin',
+                'password' => bcrypt('password'),
+            ]
+        );
+        $adminUser->syncRoles([$superadminRole]);
+
+        // Buat/ambil user admin@gmail.com, reset password menjadi 'password'
+        $generalAdmin = User::updateOrCreate(
+            ['email' => 'admin@gmail.com'],
+            [
+                'name'     => 'General Admin',
+                'password' => bcrypt('password'),
+            ]
+        );
+        $generalAdmin->syncRoles([$superadminRole]);
     }
 }

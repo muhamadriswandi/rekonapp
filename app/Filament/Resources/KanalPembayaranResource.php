@@ -16,6 +16,11 @@ class KanalPembayaranResource extends Resource
 {
     protected static ?string $model = KanalPembayaran::class;
 
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Pengaturan';
+    }
+
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-credit-card';
 
     protected static ?string $navigationLabel = 'Kanal Pembayaran';

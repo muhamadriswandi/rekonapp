@@ -20,11 +20,16 @@ class RelasiBankResource extends Resource
 {
     protected static ?string $model = RelasiBank::class;
 
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Pengaturan';
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'nama_bank';
 
-    protected static ?string $navigationLabel = 'Relasi Bank (Tenant)';
+    protected static ?string $navigationLabel = 'Relasi Bank';
 
     protected static ?string $modelLabel = 'Relasi Bank';
 

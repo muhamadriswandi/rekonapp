@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Models\RelasiBank;
+use App\Http\Controllers\LaporanKonsolidasiController;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -43,6 +44,12 @@ class AdminPanelProvider extends PanelProvider
                     ->name('reports.laporan-harian');
                 \Illuminate\Support\Facades\Route::get('/reports/laporan-penerimaan', [\App\Http\Controllers\LaporanPenerimaanController::class, 'downloadPdf'])
                     ->name('reports.laporan-penerimaan');
+            })
+            ->routes(function () {
+                \Illuminate\Support\Facades\Route::get('/reports/laporan-konsolidasi', [LaporanKonsolidasiController::class, 'downloadPdf'])
+                    ->name('reports.laporan-konsolidasi');
+                \Illuminate\Support\Facades\Route::get('/reports/laporan-konsolidasi-excel', [LaporanKonsolidasiController::class, 'downloadExcel'])
+                    ->name('reports.laporan-konsolidasi-excel');
             })
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
