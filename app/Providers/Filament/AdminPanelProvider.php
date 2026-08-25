@@ -12,6 +12,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Leek\FilamentRightClick\FilamentRightClickPlugin;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -33,7 +34,8 @@ class AdminPanelProvider extends PanelProvider
             ->login(\App\Filament\Pages\Auth\CustomLogin::class)
             ->tenant(RelasiBank::class)
             ->plugin(\BezhanSalleh\FilamentShield\FilamentShieldPlugin::make()
-            ->scopeToTenant(false))
+                ->scopeToTenant(false))
+            ->plugin(FilamentRightClickPlugin::make())
             ->resourceEditPageRedirect('index')
             ->maxContentWidth(Width::Full)
             ->colors([

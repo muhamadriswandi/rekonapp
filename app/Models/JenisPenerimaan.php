@@ -25,7 +25,7 @@ class JenisPenerimaan extends Model
                             'jenis_penerimaan_id' => $jenisPenerimaan->id,
                             'nominal' => $transaksi->nominal,
                         ]);
-                        $transaksi->update(['status' => 'Verified']);
+                        $transaksi->recalculateStatus();
                     }
                 }
             }

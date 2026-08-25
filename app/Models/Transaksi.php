@@ -14,7 +14,34 @@ class Transaksi extends Model
     {
         static::created(function ($transaksi) {
             $transaksi->autoClassify();
+            $transaksi->recalculateStatus();
         });
+
+        static::saved(function ($transaksi) {
+            $transaksi->recalculateStatus();
+        });
+    }
+
+    public function recalculateStatus(): void
+    {
+        if ($this->status === 'Posted') {
+            return;
+        }
+
+        $hasRincian = $this->rincian()->exists();
+        $hasInstansi = filled($this->instansi_id);
+
+        if ($hasRincian && $hasInstansi) {
+            $target = 'Validated';
+        } elseif ($hasRincian || $hasInstansi) {
+            $target = 'Verified';
+        } else {
+            $target = 'Raw';
+        }
+
+        if ($this->status !== $target) {
+            $this->updateQuietly(['status' => $target]);
+        }
     }
 
     public function autoClassify()
@@ -43,7 +70,7 @@ class Transaksi extends Model
                         'jenis_penerimaan_id' => $jenis->id,
                         'nominal' => $this->nominal,
                     ]);
-                    $this->update(['status' => 'Verified']);
+                    $this->recalculateStatus();
                     break;
                 }
             }

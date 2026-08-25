@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8383818c74e98cee3f6fbab642b38906",
+    "content-hash": "e81062de3c563083fa64d641ea9ae87c",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -3722,6 +3722,77 @@
                 }
             ],
             "time": "2026-03-08T20:05:35+00:00"
+        },
+        {
+            "name": "leek/filament-right-click",
+            "version": "v1.5.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/leek/filament-right-click.git",
+                "reference": "56a7a5177eb5d0e76445b57912472bc4d17d72db"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/leek/filament-right-click/zipball/56a7a5177eb5d0e76445b57912472bc4d17d72db",
+                "reference": "56a7a5177eb5d0e76445b57912472bc4d17d72db",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^4.0 || ^5.0",
+                "php": "^8.2",
+                "spatie/laravel-package-tools": "^1.15"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "orchestra/testbench": "^9.0 || ^10.0 || ^11.0",
+                "pestphp/pest": "^3.0 || ^4.0",
+                "pestphp/pest-plugin-laravel": "^3.0 || ^4.0"
+            },
+            "suggest": {
+                "leek/filament-header-filters": "Add inline header filters to the tables you enhance with right-click menus.",
+                "leek/filament-ui-plus": "Enhanced Filament UI components to match your upgraded tables.",
+                "leek/filament-workflows": "Trigger a workflow on the right-clicked record — wrap TriggerWorkflowAction in a ContextMenuItem."
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Leek\\FilamentRightClick\\FilamentRightClickServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Leek\\FilamentRightClick\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Chris Jones",
+                    "email": "leeked@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Right-click table row menus for Filament panels that trigger native Filament actions.",
+            "keywords": [
+                "actions",
+                "context-menu",
+                "filament",
+                "filamentphp",
+                "laravel",
+                "leek",
+                "right-click",
+                "tables"
+            ],
+            "support": {
+                "issues": "https://github.com/leek/filament-right-click/issues",
+                "source": "https://github.com/leek/filament-right-click"
+            },
+            "time": "2026-08-12T16:59:00+00:00"
         },
         {
             "name": "livewire/livewire",

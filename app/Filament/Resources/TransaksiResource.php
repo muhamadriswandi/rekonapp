@@ -14,6 +14,8 @@ use Filament\Support\RawJs;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Actions\BulkAction;
 use CodeWithDennis\FilamentSelectTree\SelectTree;
+use Filament\Actions\Action;
+use Leek\FilamentRightClick\Menu\ContextMenuItem;
 
 class TransaksiResource extends Resource
 {
@@ -82,6 +84,88 @@ class TransaksiResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $rincianAction = \Filament\Actions\Action::make('rincian')
+            ->label('Rincian')
+            ->icon('heroicon-o-list-bullet')
+            ->color('info')
+            ->visible(fn (Transaksi $record) => \Illuminate\Support\Facades\Auth::user()?->can('rincian', $record))
+            ->modalHeading('Rincian Pembagian Transaksi')
+            ->modalSubmitActionLabel('Simpan Rincian')
+            ->fillForm(fn (Transaksi $record): array => [
+                'rincian' => $record->rincian->map(fn ($item) => [
+                    'jenis_penerimaan_id' => $item->jenis_penerimaan_id,
+                    'nominal' => (float)$item->nominal,
+                ])->toArray(),
+            ])
+            ->form([
+                Forms\Components\Placeholder::make('nominal_transaksi')
+                    ->label('Total Nominal Transaksi')
+                    ->content(fn (Transaksi $record): string => 'Rp ' . number_format($record->nominal, 0, ',', '.')),
+                Forms\Components\Repeater::make('rincian')
+                    ->label('Rincian Penerimaan')
+                    ->schema([
+                        SelectTree::make('jenis_penerimaan_id')
+                            ->query(
+                                query: fn () => \App\Models\JenisPenerimaan::query(),
+                                titleAttribute: 'nama',
+                                parentAttribute: 'parent_id',
+                            )
+                            ->required()
+                            ->placeholder('Pilih Jenis Penerimaan')
+                            ->label('Jenis Penerimaan'),
+                        Forms\Components\TextInput::make('nominal')
+                            ->required()
+                            ->label('Nominal')
+                            ->prefix('Rp')
+                            ->inputMode('decimal')
+                            ->mask(RawJs::make(<<<'JS'
+                                $money($input, ',', '.', 2)
+                            JS))
+                            ->formatStateUsing(fn ($state) => filled($state)
+                                ? number_format((float) $state, 2, ',', '.')
+                                : null
+                            )
+                            ->dehydrateStateUsing(fn ($state) => blank($state)
+                                ? null
+                                : str_replace(',', '.', str_replace('.', '', $state)))
+                    ])
+                    ->minItems(1)
+                    ->rules([
+                        fn ($get, $record) => function (string $attribute, $value, \Closure $fail) use ($get, $record) {
+                            $total = collect($value)->sum(function ($item) {
+                                $nominal = $item['nominal'] ?? 0;
+                                if (is_string($nominal)) {
+                                    $nominal = str_replace(',', '.', str_replace('.', '', $nominal));
+                                }
+                                return (float) $nominal;
+                            });
+                            if (abs($total - (float) $record->nominal) > 0.001) {
+                                $fail("Total rincian (Rp " . number_format($total, 2, ',', '.') . ") harus sama dengan nominal transaksi (Rp " . number_format($record->nominal, 2, ',', '.') . ").");
+                            }
+                        }
+                    ])
+            ])
+            ->action(function (Transaksi $record, array $data) {
+                $record->rincian()->delete();
+                foreach ($data['rincian'] as $item) {
+                    $record->rincian()->create([
+                        'jenis_penerimaan_id' => $item['jenis_penerimaan_id'],
+                        'nominal' => $item['nominal'],
+                    ]);
+                }
+
+                $record->recalculateStatus();
+
+                \Filament\Notifications\Notification::make()
+                    ->title('Rincian Berhasil Disimpan')
+                    ->success()
+                    ->send();
+            });
+
+        $viewAction = \Filament\Actions\ViewAction::make();
+        $editAction = \Filament\Actions\EditAction::make();
+        $deleteAction = \Filament\Actions\DeleteAction::make();
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('tanggal_transaksi')
@@ -129,88 +213,16 @@ class TransaksiResource extends Resource
             ])
             ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContentCollapsible)
             ->actions([
-                 \Filament\Actions\Action::make('rincian')
-                    ->label('Rincian')
-                    ->icon('heroicon-o-list-bullet')
-                    ->color('info')
-                    ->visible(fn (Transaksi $record) => \Illuminate\Support\Facades\Auth::user()?->can('rincian', $record))
-                    ->modalHeading('Rincian Pembagian Transaksi')
-                    ->modalSubmitActionLabel('Simpan Rincian')
-                    ->fillForm(fn (Transaksi $record): array => [
-                        'rincian' => $record->rincian->map(fn ($item) => [
-                            'jenis_penerimaan_id' => $item->jenis_penerimaan_id,
-                            'nominal' => (float)$item->nominal,
-                        ])->toArray(),
-                    ])
-                    ->form([
-                        Forms\Components\Placeholder::make('nominal_transaksi')
-                            ->label('Total Nominal Transaksi')
-                            ->content(fn (Transaksi $record): string => 'Rp ' . number_format($record->nominal, 0, ',', '.')),
-                        Forms\Components\Repeater::make('rincian')
-                            ->label('Rincian Penerimaan')
-                            ->schema([
-                                SelectTree::make('jenis_penerimaan_id')
-                                    ->query(
-                                        query: fn () => \App\Models\JenisPenerimaan::query(),
-                                        titleAttribute: 'nama',
-                                        parentAttribute: 'parent_id',
-                                    )
-                                    ->required()
-                                    ->placeholder('Pilih Jenis Penerimaan')
-                                    ->label('Jenis Penerimaan'),
-                                Forms\Components\TextInput::make('nominal')
-                                    ->required()
-                                     ->label('Nominal')
-                                    ->prefix('Rp')
-                                    ->inputMode('decimal')
-                                    ->mask(RawJs::make(<<<'JS'
-                                        $money($input, ',', '.', 2)
-                                    JS))
-                                    ->formatStateUsing(fn ($state) => filled($state)
-                                        ? number_format((float) $state, 2, ',', '.')
-                                        : null
-                                    )
-                                    ->dehydrateStateUsing(fn ($state) => blank($state)
-                                        ? null
-                                        : str_replace(',', '.', str_replace('.', '', $state)))
-                            ])
-                            ->minItems(1)
-                            ->rules([
-                                fn ($get, $record) => function (string $attribute, $value, \Closure $fail) use ($get, $record) {
-                                     $total = collect($value)->sum(function ($item) {
-                                         $nominal = $item['nominal'] ?? 0;
-                                         if (is_string($nominal)) {
-                                             $nominal = str_replace(',', '.', str_replace('.', '', $nominal));
-                                         }
-                                         return (float) $nominal;
-                                     });
-                                     if (abs($total - (float) $record->nominal) > 0.001) {
-                                         $fail("Total rincian (Rp " . number_format($total, 2, ',', '.') . ") harus sama dengan nominal transaksi (Rp " . number_format($record->nominal, 2, ',', '.') . ").");
-                                     }
-                                 }
-                            ])
-                    ])
-                    ->action(function (Transaksi $record, array $data) {
-                        $record->rincian()->delete();
-                        foreach ($data['rincian'] as $item) {
-                            $record->rincian()->create([
-                                'jenis_penerimaan_id' => $item['jenis_penerimaan_id'],
-                                'nominal' => $item['nominal'],
-                            ]);
-                        }
-
-                        if ($record->status === 'Raw') {
-                            $record->update(['status' => 'Verified']);
-                        }
-
-                        \Filament\Notifications\Notification::make()
-                            ->title('Rincian Berhasil Disimpan')
-                            ->success()
-                            ->send();
-                    }),
-                \Filament\Actions\ViewAction::make(),
-                \Filament\Actions\EditAction::make(),
-                \Filament\Actions\DeleteAction::make(),
+                $rincianAction,
+                $viewAction,
+                $editAction,
+                $deleteAction,
+            ])
+            ->contextMenuActions([
+                $rincianAction,
+                $viewAction,
+                $editAction,
+                $deleteAction,
             ])
             ->bulkActions([
                 \Filament\Actions\BulkActionGroup::make([
@@ -232,13 +244,13 @@ class TransaksiResource extends Resource
                             $records->each(function ($record) use ($data) {
                                 $record->update([
                                     'instansi_id' => $data['instansi_id'],
-                                    'status' => 'Validated',
                                 ]);
+                                $record->recalculateStatus();
                             });
 
                             \Filament\Notifications\Notification::make()
                                 ->title('Instansi Diperbarui')
-                                ->body('Status transaksi terpilih berhasil diubah menjadi Validated.')
+                                ->body('Instansi transaksi terpilih berhasil diperbarui.')
                                 ->success()
                                 ->send();
                         }),
