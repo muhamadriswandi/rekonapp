@@ -1,0 +1,7 @@
+no_referensi,kode_bank,tanggal_transaksi,deskripsi,nominal,tipe_mutasi,kode_kanal,kode_instansi,status,kode_rekening,nominal_rincian
+TRX-20260610-001,BANK_JABAR,2026-06-10,Penerimaan Pajak Hotel Melati,15000000,D,QRIS,BAPENDA,Posted,4.1.01.01,15000000
+TRX-20260611-002,BANK_JABAR,2026-06-11,Penerimaan Pajak Hotel Bintang Empat,10000000,D,ATM,BAPENDA,Posted,4.1.01.02,10000000
+TRX-20260612-003,BANK_JABAR,2026-06-12,Penerimaan Pajak Restoran Rumah Makan Padang,5000000,D,TELLER,BAPENDA,Posted,4.1.02.02.001.00001,5000000
+TRX-20260613-004,BANK_BCA,2026-06-13,Pembayaran Gabungan Pajak Hotel dan Restoran,25000000,D,TELLER,BAPENDA,Posted,4.1.01.01,15000000
+TRX-20260613-004,BANK_BCA,2026-06-13,Pembayaran Gabungan Pajak Hotel dan Restoran,25000000,D,TELLER,BAPENDA,Posted,4.1.02.02.001,10000000
+TRX-20260614-005,BANK_BCA,2026-06-14,Penerimaan Pajak Restoran Tertentu,3500000,D,EDC,BAPENDA,Posted,4.1.02.02,3500000

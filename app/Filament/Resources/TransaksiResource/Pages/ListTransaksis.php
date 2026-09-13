@@ -58,6 +58,49 @@ public function table(Table $table): Table
     {
         return [
             Actions\CreateAction::make(),
+            Actions\Action::make('uploadCsvLengkap')
+                ->label('Upload CSV Lengkap')
+                ->icon('heroicon-o-document-arrow-up')
+                ->color('success')
+                ->visible(fn () => \Illuminate\Support\Facades\Gate::allows('uploadCsv', Transaksi::class))
+                ->modalHeading('Upload File CSV Transaksi Lengkap')
+                ->modalDescription('Impor data transaksi beserta rincian rekening penerimaan dalam satu file CSV.')
+                ->modalSubmitActionLabel('Impor')
+                ->schema([
+                    FileUpload::make('csv_file')
+                        ->label('Pilih File CSV')
+                        ->required()
+                        ->disk('local')
+                        ->directory('temp-csv')
+                        ->acceptedFileTypes(['text/csv', 'text/plain', 'application/csv'])
+                        ->preventFilePathTampering(),
+                ])
+                ->action(function (array $data) {
+                    $tenantId = Filament::getTenant()?->id;
+                    $csvFile = is_array($data['csv_file']) ? reset($data['csv_file']) : $data['csv_file'];
+                    $filePath = Storage::disk('local')->path($csvFile);
+
+                    $service = app(\App\Services\TransaksiImportService::class);
+                    $result = $service->import($filePath, $tenantId);
+
+                    // Hapus file temporary setelah import selesai
+                    Storage::disk('local')->delete($csvFile);
+
+                    if ($result['success']) {
+                        Notification::make()
+                            ->title('Impor CSV Lengkap Berhasil')
+                            ->body("Berhasil mengimpor {$result['transaksi_count']} transaksi dan {$result['rincian_count']} rincian.")
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title('Impor CSV Gagal')
+                            ->body(implode("\n", array_slice($result['errors'], 0, 5)))
+                            ->danger()
+                            ->persistent()
+                            ->send();
+                    }
+                }),
             Actions\Action::make('uploadCsv')
                 ->label('Upload CSV')
                 ->icon('heroicon-o-arrow-up-tray')
