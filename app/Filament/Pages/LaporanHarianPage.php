@@ -20,6 +20,11 @@ class LaporanHarianPage extends Page implements HasTable
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-chart-bar';
 
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Laporan';
+    }
+
     protected static ?string $navigationLabel = 'Laporan Harian';
 
     protected static ?string $title = 'Laporan Harian';
@@ -83,8 +88,8 @@ class LaporanHarianPage extends Page implements HasTable
                 $instansiId = $this->data['instansi_id'] ?? null;
 
                 $query = Transaksi::query()
+                    ->with(['rincian.jenisPenerimaan', 'kanalPembayaran'])
                     ->where('relasi_bank_id', \Filament\Facades\Filament::getTenant()->id)
-                    ->whereIn('status', ['Validated', 'Posted'])
                     ->whereDate('tanggal_transaksi', '>=', $tanggalMulai)
                     ->whereDate('tanggal_transaksi', '<=', $tanggalSelesai);
 
@@ -96,34 +101,43 @@ class LaporanHarianPage extends Page implements HasTable
             })
             ->columns([
                 TextColumn::make('tanggal_transaksi')
-                    ->date()
+                    ->date('d/m/Y')
                     ->sortable()
                     ->label('Tanggal'),
                 TextColumn::make('deskripsi')
                     ->limit(50)
                     ->searchable()
+                    ->wrap()
                     ->label('Deskripsi'),
                 TextColumn::make('nominal')
                     ->money('idr')
                     ->sortable()
                     ->label('Nominal'),
-                TextColumn::make('tipe_mutasi')
-                    ->badge()
-                    ->color(fn ($state) => $state === 'D' ? 'danger' : 'success')
-                    ->label('Mutasi'),
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn ($state) => $state === 'Validated' ? 'success' : 'info')
+                    ->color(fn (string $state): string => match ($state) {
+                        'Posted' => 'success',
+                        'Validated' => 'info',
+                        'Verified' => 'warning',
+                        'Raw' => 'gray',
+                        default => 'gray',
+                    })
                     ->label('Status'),
-                TextColumn::make('kanalPembayaran.nama')
-                    ->label('Kanal')
+                TextColumn::make('rincian.jenisPenerimaan.nama')
+                    ->label('Jenis Penerimaan')
+                    ->listWithLineBreaks()
                     ->placeholder('-'),
-                TextColumn::make('instansi.nama_instansi')
-                    ->label('Instansi')
+                TextColumn::make('rincian.nominal')
+                    ->label('Nominal Rincian')
+                    ->money('idr')
+                    ->listWithLineBreaks()
+                    ->placeholder('-'),
+                TextColumn::make('kanalPembayaran.nama')
+                    ->label('Kanal Pembayaran')
                     ->placeholder('-'),
             ])
             ->emptyStateHeading('Tidak Ada Transaksi')
-            ->emptyStateDescription('Tidak ada transaksi Validated atau Posted pada rentang tanggal yang dipilih.');
+            ->emptyStateDescription('Tidak ada transaksi pada rentang tanggal yang dipilih.');
     }
 
     public function cetakPdf(): void

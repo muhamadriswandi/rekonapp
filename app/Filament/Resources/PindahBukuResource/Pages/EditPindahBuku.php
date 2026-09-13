@@ -22,7 +22,7 @@ class EditPindahBuku extends EditRecord
                 ->modalHeading('Tutup Buku & Posting Pindah Buku?')
                 ->modalDescription('Apakah Anda yakin ingin melakukan Tutup Buku & Posting? Aksi ini akan menghitung total debit/kredit transaksi berstatus Validated pada rentang tanggal terpilih, mengunci Pindah Buku, dan memperbarui transaksi menjadi Posted.')
                 ->modalSubmitActionLabel('Ya, Tutup Buku')
-                ->visible(fn (PindahBuku $record): bool => $record->status === 'Open' && \Illuminate\Support\Facades\Auth::user()?->can('tutupBuku', $record))
+                ->visible(fn (PindahBuku $record): bool => $record->status === 'Open' && \Illuminate\Support\Facades\Gate::allows('tutupBuku', $record))
                 ->action(function (PindahBuku $record) {
                     $record->tutupBukuDanPosting();
 
@@ -38,6 +38,26 @@ class EditPindahBuku extends EditRecord
                         'total_kredit',
                         'closed_at',
                     ]);
+                }),
+            Actions\Action::make('bukaBuku')
+                ->label('Buka Kembali')
+                ->icon('heroicon-o-lock-open')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalHeading('Buka Kembali Pindah Buku?')
+                ->modalDescription('Apakah Anda yakin ingin membuka kembali Pindah Buku ini? Status Pindah Buku akan kembali menjadi Open, seluruh transaksi terkait akan dikembalikan ke status Validated (Unpost), dan form dapat diedit kembali.')
+                ->modalSubmitActionLabel('Ya, Buka Kembali')
+                ->visible(fn (PindahBuku $record): bool => $record->status === 'Closed' && \Illuminate\Support\Facades\Gate::allows('bukaBuku', $record))
+                ->action(function (PindahBuku $record) {
+                    $record->bukaKembaliDanUnpost();
+
+                    \Filament\Notifications\Notification::make()
+                        ->title('Sukses')
+                        ->body("Pindah Buku berhasil dibuka kembali dan transaksi di-unpost.")
+                        ->success()
+                        ->send();
+
+                    $this->redirect(PindahBukuResource::getUrl('edit', ['record' => $record]));
                 }),
             Actions\DeleteAction::make(),
         ];

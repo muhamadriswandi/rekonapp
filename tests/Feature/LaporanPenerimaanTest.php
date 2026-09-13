@@ -15,6 +15,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    /** @var \Tests\TestCase $this */
     $this->tenant = RelasiBank::create([
         'kode_bank' => 'TEST_BANK',
         'nama_bank' => 'Test Bank'
@@ -22,10 +23,17 @@ beforeEach(function () {
 
     $role = Role::create(['name' => 'Supervisor']);
     
+    $instansi = Instansi::create([
+        'kode_instansi' => 'INS01',
+        'nama_instansi' => 'Instansi 1'
+    ]);
+    $this->tenant->instansi()->attach($instansi->id);
+
     $this->user = User::create([
         'name' => 'Supervisor User',
         'email' => 'supervisor@test.com',
-        'password' => bcrypt('password')
+        'password' => bcrypt('password'),
+        'instansi_id' => $instansi->id,
     ]);
     $this->user->assignRole($role);
     $this->actingAs($this->user);

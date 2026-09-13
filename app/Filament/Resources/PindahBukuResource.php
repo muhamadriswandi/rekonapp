@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PindahBukuResource\Pages;
 use App\Models\PindahBuku;
+use App\Models\User;
 use Filament\Forms;
 
 use Illuminate\Support\Facades\Auth;
@@ -53,6 +54,26 @@ class PindahBukuResource extends Resource
                     ->afterOrEqual('tanggal_mulai')
                     ->disabled(fn (?PindahBuku $record) => $record?->status === 'Closed')
                     ->label('Tanggal Selesai'),
+                Forms\Components\Select::make('periode_pembukuan_id')
+                    ->label('Periode Pembukuan')
+                    ->relationship(
+                        name: 'periodePembukuan',
+                        titleAttribute: 'id',
+                        modifyQueryUsing: fn ($query) => $query->where('relasi_bank_id', \Filament\Facades\Filament::getTenant()?->id)
+                    )
+                    ->getOptionLabelFromRecordUsing(function (\App\Models\PeriodePembukuan $record) {
+                        $months = [
+                            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+                        ];
+                        $monthName = $months[$record->bulan] ?? "Bulan {$record->bulan}";
+                        return "{$monthName} {$record->tahun} ({$record->status})";
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->disabled(fn (?PindahBuku $record) => $record?->status === 'Closed'),
                 Forms\Components\Select::make('status')
                     ->options([
                         'Open' => 'Open',
@@ -118,6 +139,26 @@ class PindahBukuResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $canTutupBuku = function (PindahBuku $record): bool {
+            $user = Auth::user();
+
+            if (! $user instanceof User) {
+                return false;
+            }
+
+            return $user->can('tutupBuku', $record);
+        };
+
+        $canBukaBuku = function (PindahBuku $record): bool {
+            $user = Auth::user();
+
+            if (! $user instanceof User) {
+                return false;
+            }
+
+            return $user->can('bukaBuku', $record);
+        };
+
         return $table
             ->selectable()
             ->columns([
@@ -129,6 +170,18 @@ class PindahBukuResource extends Resource
                     ->date()
                     ->sortable()
                     ->label('Tanggal Selesai'),
+                Tables\Columns\TextColumn::make('periodePembukuan')
+                    ->formatStateUsing(function ($state, PindahBuku $record) {
+                        $p = $record->periodePembukuan;
+                        if (! $p) return '-';
+                        $months = [
+                            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+                        ];
+                        return ($months[$p->bulan] ?? $p->bulan) . ' ' . $p->tahun;
+                    })
+                    ->label('Periode Buku'),
                 Tables\Columns\TextColumn::make('keterangan')
                     ->searchable()
                     ->placeholder('-')
@@ -166,13 +219,31 @@ class PindahBukuResource extends Resource
                     ->modalHeading('Tutup Buku & Posting Pindah Buku?')
                     ->modalDescription('Apakah Anda yakin ingin melakukan Tutup Buku & Posting? Aksi ini akan menghitung total debit/kredit transaksi berstatus Validated pada rentang tanggal terpilih, mengunci Pindah Buku, dan memperbarui transaksi menjadi Posted.')
                     ->modalSubmitActionLabel('Ya, Tutup Buku')
-                    ->visible(fn (PindahBuku $record) => $record->status === 'Open' && Auth::check() && Auth::user()->can('tutupBuku', $record))
+                    ->visible(fn (PindahBuku $record) => $record->status === 'Open' && $canTutupBuku($record))
                     ->action(function (PindahBuku $record) {
                         $record->tutupBukuDanPosting();
 
                         \Filament\Notifications\Notification::make()
                             ->title('Sukses')
                             ->body("Pindah Buku berhasil ditutup.")
+                            ->success()
+                            ->send();
+                    }),
+                \Filament\Actions\Action::make('bukaBuku')
+                    ->label('Buka Kembali')
+                    ->icon('heroicon-o-lock-open')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Buka Kembali Pindah Buku?')
+                    ->modalDescription('Apakah Anda yakin ingin membuka kembali Pindah Buku ini? Status Pindah Buku akan kembali menjadi Open, seluruh transaksi terkait akan dikembalikan ke status Validated (Unpost), dan data dapat diedit kembali.')
+                    ->modalSubmitActionLabel('Ya, Buka Kembali')
+                    ->visible(fn (PindahBuku $record) => $record->status === 'Closed' && $canBukaBuku($record))
+                    ->action(function (PindahBuku $record) {
+                        $record->bukaKembaliDanUnpost();
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Sukses')
+                            ->body("Pindah Buku berhasil dibuka kembali dan transaksi di-unpost.")
                             ->success()
                             ->send();
                     }),

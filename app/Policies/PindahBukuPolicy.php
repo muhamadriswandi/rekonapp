@@ -76,4 +76,9 @@ class PindahBukuPolicy
     {
         return $authUser->can('Update:PindahBuku') || $authUser->hasRole(['Supervisor', 'super_admin', 'Super Admin']);
     }
+
+    public function bukaBuku(AuthUser $authUser, PindahBuku $pindahBuku): bool
+    {
+        return $authUser->can('Update:PindahBuku') || $authUser->hasRole(['Supervisor', 'super_admin', 'Super Admin']);
+    }
 }

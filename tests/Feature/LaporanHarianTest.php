@@ -13,6 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    /** @var \Tests\TestCase $this */
     // 1. Create two banks (tenants)
     $this->bankA = RelasiBank::create([
         'kode_bank' => 'BANK_A',
@@ -123,12 +124,18 @@ beforeEach(function () {
         'status' => 'Validated'
     ]);
 
+    // Attach instansi to bankA
+    $this->bankA->instansi()->attach($this->instansi->id);
+
     // Create and authenticate User
+    $role = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'super_admin']);
     $this->user = User::create([
         'name' => 'Admin User',
         'email' => 'admin@test.com',
-        'password' => bcrypt('password')
+        'password' => bcrypt('password'),
+        'instansi_id' => $this->instansi->id,
     ]);
+    $this->user->assignRole($role);
 });
 
 test('authenticated user can download daily report PDF', function () {
@@ -165,4 +172,52 @@ test('authenticated user can download report PDF with date range', function () {
     
     // Check that header attachment name contains correct date range
     $response->assertHeader('content-disposition', 'attachment; filename=laporan_harian_2026-06-16_to_2026-06-17.pdf');
+});
+
+test('laporan harian page shows all transactions regardless of status', function () {
+    $this->actingAs($this->user);
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    Filament::setTenant($this->bankA);
+
+    \Livewire\Livewire::test(\App\Filament\Pages\LaporanHarianPage::class)
+        ->fillForm([
+            'tanggal_mulai' => '2026-06-16',
+            'tanggal_selesai' => '2026-06-16',
+        ])
+        ->assertSuccessful();
+});
+
+test('daily report PDF renders transactions with multiple rincian across split rows', function () {
+    $this->actingAs($this->user);
+
+    // Create a transaction with 3 rincian
+    $t = Transaksi::create([
+        'relasi_bank_id' => $this->bankA->id,
+        'instansi_id' => $this->instansi->id,
+        'tanggal_transaksi' => '2026-06-16',
+        'nominal' => 30000,
+        'tipe_mutasi' => 'K',
+        'kanal_pembayaran_id' => $this->kanal->id,
+        'status' => 'Validated',
+    ]);
+    TransaksiRincian::create([
+        'transaksi_id' => $t->id,
+        'jenis_penerimaan_id' => $this->pajakHotel->id,
+        'nominal' => 10000,
+    ]);
+    TransaksiRincian::create([
+        'transaksi_id' => $t->id,
+        'jenis_penerimaan_id' => $this->pajakParent->id,
+        'nominal' => 20000,
+    ]);
+
+    $url = route('filament.admin.reports.laporan-harian', [
+        'tenant' => $this->bankA->id,
+        'tanggal_mulai' => '2026-06-16',
+        'tanggal_selesai' => '2026-06-16',
+    ]);
+
+    $response = $this->get($url);
+    $response->assertStatus(200);
+    $response->assertHeader('content-type', 'application/pdf');
 });

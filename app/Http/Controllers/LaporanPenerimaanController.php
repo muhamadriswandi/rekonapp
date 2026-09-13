@@ -11,7 +11,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanPenerimaanController extends Controller
 {
-    public function downloadPdf($tenant, Request $request)
+    public function downloadPdf(int|string $tenant, Request $request)
     {
         $activeTenant = RelasiBank::findOrFail($tenant);
 
@@ -33,6 +33,7 @@ class LaporanPenerimaanController extends Controller
         // Fetch transaction details
         $query = DB::table('transaksi_rincian as tr')
             ->join('transaksi as t', 'tr.transaksi_id', '=', 't.id')
+            ->leftJoin('periode_pembukuan as pp', 't.periode_pembukuan_id', '=', 'pp.id')
             ->join('jenis_penerimaan as jp', 'tr.jenis_penerimaan_id', '=', 'jp.id')
             ->leftJoin('instansi as i', 't.instansi_id', '=', 'i.id')
             ->select([
@@ -43,9 +44,18 @@ class LaporanPenerimaanController extends Controller
             ])
             ->where('t.relasi_bank_id', $activeTenant->id)
             ->where('t.status', 'Posted')
-            ->whereYear('t.tanggal_transaksi', $tahun)
-            ->whereMonth('t.tanggal_transaksi', '>=', $dariBulan)
-            ->whereMonth('t.tanggal_transaksi', '<=', $sampaiBulan);
+            ->where(function ($query) use ($tahun, $dariBulan, $sampaiBulan) {
+                $query->where(function ($q) use ($tahun, $dariBulan, $sampaiBulan) {
+                    $q->whereNotNull('t.periode_pembukuan_id')
+                        ->where('pp.tahun', $tahun)
+                        ->whereBetween('pp.bulan', [$dariBulan, $sampaiBulan]);
+                })->orWhere(function ($q) use ($tahun, $dariBulan, $sampaiBulan) {
+                    $q->whereNull('t.periode_pembukuan_id')
+                        ->whereYear('t.tanggal_transaksi', $tahun)
+                        ->whereMonth('t.tanggal_transaksi', '>=', $dariBulan)
+                        ->whereMonth('t.tanggal_transaksi', '<=', $sampaiBulan);
+                });
+            });
 
         if ($instansiId) {
             $query->where('t.instansi_id', $instansiId);

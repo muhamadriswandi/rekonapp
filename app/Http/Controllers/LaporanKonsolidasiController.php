@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\RelasiBank;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +14,6 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Font;
 
 class LaporanKonsolidasiController extends Controller
 {
@@ -25,7 +25,9 @@ class LaporanKonsolidasiController extends Controller
     {
         $user = Auth::user();
 
-        abort_unless($user !== null, 403);
+        if (! $user instanceof User) {
+            abort(403);
+        }
 
         if ($user->isSuperadmin()) {
             return RelasiBank::pluck('id')->toArray();
@@ -51,6 +53,7 @@ class LaporanKonsolidasiController extends Controller
         // scoped to banks the current user is allowed to access
         $data = DB::table('transaksi_rincian as tr')
             ->join('transaksi as t', 'tr.transaksi_id', '=', 't.id')
+            ->leftJoin('periode_pembukuan as pp', 't.periode_pembukuan_id', '=', 'pp.id')
             ->join('jenis_penerimaan as jp', 'tr.jenis_penerimaan_id', '=', 'jp.id')
             ->join('relasi_bank as rb', 't.relasi_bank_id', '=', 'rb.id')
             ->select([
@@ -62,9 +65,18 @@ class LaporanKonsolidasiController extends Controller
                 DB::raw('SUM(tr.nominal) as total_nominal'),
             ])
             ->where('t.status', 'Posted')
-            ->whereYear('t.tanggal_transaksi', $tahun)
-            ->whereMonth('t.tanggal_transaksi', '>=', $dariBulan)
-            ->whereMonth('t.tanggal_transaksi', '<=', $sampaiBulan)
+            ->where(function ($query) use ($tahun, $dariBulan, $sampaiBulan) {
+                $query->where(function ($q) use ($tahun, $dariBulan, $sampaiBulan) {
+                    $q->whereNotNull('t.periode_pembukuan_id')
+                        ->where('pp.tahun', $tahun)
+                        ->whereBetween('pp.bulan', [$dariBulan, $sampaiBulan]);
+                })->orWhere(function ($q) use ($tahun, $dariBulan, $sampaiBulan) {
+                    $q->whereNull('t.periode_pembukuan_id')
+                        ->whereYear('t.tanggal_transaksi', $tahun)
+                        ->whereMonth('t.tanggal_transaksi', '>=', $dariBulan)
+                        ->whereMonth('t.tanggal_transaksi', '<=', $sampaiBulan);
+                });
+            })
             ->whereIn('t.relasi_bank_id', $allowedBankIds)  // ← scoped to allowed banks
             ->groupBy('jp.id', 'jp.kode', 'jp.nama', 'rb.id', 'rb.nama_bank')
             ->orderBy('jp.kode')
@@ -144,8 +156,8 @@ class LaporanKonsolidasiController extends Controller
     public function downloadPdf(Request $request)
     {
         // Auth & role check — hanya user dengan role yang valid
-        abort_unless(Auth::check(), 403);
-        abort_unless(Auth::user()->hasRole(['super_admin', 'Supervisor', 'Operator']), 403);
+        $user = Auth::user();
+        abort_unless($user instanceof User && $user->hasRole(['super_admin', 'Supervisor', 'Operator']), 403);
 
         $allowedBankIds = $this->getAllowedBankIds();
         abort_if(empty($allowedBankIds), 403, 'Anda tidak memiliki akses ke tenant manapun.');
@@ -172,8 +184,8 @@ class LaporanKonsolidasiController extends Controller
     public function downloadExcel(Request $request)
     {
         // Auth & role check — hanya user dengan role yang valid
-        abort_unless(Auth::check(), 403);
-        abort_unless(Auth::user()->hasRole(['super_admin', 'Supervisor', 'Operator']), 403);
+        $user = Auth::user();
+        abort_unless($user instanceof User && $user->hasRole(['super_admin', 'Supervisor', 'Operator']), 403);
 
         $allowedBankIds = $this->getAllowedBankIds();
         abort_if(empty($allowedBankIds), 403, 'Anda tidak memiliki akses ke tenant manapun.');

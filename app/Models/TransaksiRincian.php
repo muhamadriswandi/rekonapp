@@ -10,6 +10,17 @@ class TransaksiRincian extends Model
 
     protected $guarded = [];
 
+    protected static function booted()
+    {
+        static::saved(function ($rincian) {
+            $rincian->transaksi?->recalculateStatus();
+        });
+
+        static::deleted(function ($rincian) {
+            $rincian->transaksi?->recalculateStatus();
+        });
+    }
+
     public function transaksi()
     {
         return $this->belongsTo(Transaksi::class, 'transaksi_id');

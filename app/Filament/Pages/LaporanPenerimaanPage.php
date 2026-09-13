@@ -19,6 +19,10 @@ class LaporanPenerimaanPage extends Page implements HasTable
     use InteractsWithTable;
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-text';
+        public static function getNavigationGroup(): ?string
+    {
+        return 'Laporan';
+    }
 
     protected static ?string $navigationLabel = 'Laporan Penerimaan';
 
@@ -101,11 +105,21 @@ class LaporanPenerimaanPage extends Page implements HasTable
                 $query = TransaksiRincian::query()
                     ->select('transaksi_rincian.*')
                     ->join('transaksi', 'transaksi_rincian.transaksi_id', '=', 'transaksi.id')
+                    ->leftJoin('periode_pembukuan', 'transaksi.periode_pembukuan_id', '=', 'periode_pembukuan.id')
                     ->where('transaksi.relasi_bank_id', Filament::getTenant()->id)
                     ->where('transaksi.status', 'Posted')
-                    ->whereYear('transaksi.tanggal_transaksi', $tahun)
-                    ->whereMonth('transaksi.tanggal_transaksi', '>=', $dariBulan)
-                    ->whereMonth('transaksi.tanggal_transaksi', '<=', $sampaiBulan);
+                    ->where(function ($q) use ($tahun, $dariBulan, $sampaiBulan) {
+                        $q->where(function ($sub) use ($tahun, $dariBulan, $sampaiBulan) {
+                            $sub->whereNotNull('transaksi.periode_pembukuan_id')
+                                ->where('periode_pembukuan.tahun', $tahun)
+                                ->whereBetween('periode_pembukuan.bulan', [$dariBulan, $sampaiBulan]);
+                        })->orWhere(function ($sub) use ($tahun, $dariBulan, $sampaiBulan) {
+                            $sub->whereNull('transaksi.periode_pembukuan_id')
+                                ->whereYear('transaksi.tanggal_transaksi', $tahun)
+                                ->whereMonth('transaksi.tanggal_transaksi', '>=', $dariBulan)
+                                ->whereMonth('transaksi.tanggal_transaksi', '<=', $sampaiBulan);
+                        });
+                    });
                 
                 if ($instansiId) {
                     $query->where('transaksi.instansi_id', $instansiId);

@@ -127,7 +127,7 @@ class PeriodePembukuanResource extends Resource
                     ->modalHeading('Tutup Buku & Posting Periode?')
                     ->modalDescription('Apakah Anda yakin ingin melakukan Tutup Buku & Posting? Aksi ini akan menghitung total debit/kredit transaksi berstatus Validated pada periode ini, mengunci periode pembukuan, dan memperbarui transaksi menjadi Posted.')
                     ->modalSubmitActionLabel('Ya, Tutup Buku')
-                    ->visible(fn (PeriodePembukuan $record): bool => $record->status === 'Open' && \Illuminate\Support\Facades\Auth::user()?->can('tutupBuku', $record))
+                    ->visible(fn (PeriodePembukuan $record): bool => $record->status === 'Open' && \Illuminate\Support\Facades\Gate::allows('tutupBuku', $record))
                     ->action(function (PeriodePembukuan $record) {
                         $record->tutupBukuDanPosting();
 

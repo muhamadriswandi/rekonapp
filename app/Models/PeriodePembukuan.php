@@ -21,6 +21,11 @@ class PeriodePembukuan extends Model
         return $this->hasMany(Transaksi::class, 'periode_pembukuan_id');
     }
 
+    public function pindahBuku()
+    {
+        return $this->hasMany(PindahBuku::class, 'periode_pembukuan_id');
+    }
+
     /**
      * Close the booking period and post validated transactions.
      */

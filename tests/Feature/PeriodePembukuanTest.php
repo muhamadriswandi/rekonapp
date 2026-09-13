@@ -155,6 +155,12 @@ test('tutup buku dan posting successfully calculates totals and updates transact
         'status' => 'Validated'
     ]);
 
+    $t1->updateQuietly(['status' => 'Validated']);
+    $t2->updateQuietly(['status' => 'Validated']);
+    $t3->updateQuietly(['status' => 'Validated']);
+    $t4->updateQuietly(['status' => 'Verified']);
+    $t5->updateQuietly(['status' => 'Validated']);
+
     // Trigger close book
     $periode->tutupBukuDanPosting();
 

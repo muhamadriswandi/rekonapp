@@ -1,0 +1,100 @@
+﻿Kode;Nama;Kategori Induk
+4.1.01;Pajak Daerah;
+4.1.01.09;Pajak Reklame;Pajak Daerah
+4.1.01.11;Pajak Parkir;Pajak Daerah
+4.1.01.12;Pajak Air Tanah;Pajak Daerah
+4.1.01.13;Pajak Sarang Burung Walet;Pajak Daerah
+4.1.01.14;Pajak Mineral Bukan Logam dan Batuan;Pajak Daerah
+4.1.01.15;Pajak Bumi dan Bangunan Perdesaan dan Perkotaan (PBBP2);Pajak Daerah
+4.1.01.16;Bea Perolehan Hak Atas Tanah dan Bangunan (BPHTB);Pajak Daerah
+4.1.01.19;Pajak Barang dan Jasa Tertentu (PBJT);Pajak Daerah
+4.1.01.19.001;PBJT-Makanan dan/atau Minuman;Pajak Barang dan Jasa Tertentu (PBJT)
+4.1.01.19.002;PBJT-Tenaga Listrik;Pajak Barang dan Jasa Tertentu (PBJT)
+4.1.01.19.003;PBJT-Jasa Perhotelan;Pajak Barang dan Jasa Tertentu (PBJT)
+4.1.01.19.004;PBJT-Jasa Parkir;Pajak Barang dan Jasa Tertentu (PBJT)
+4.1.01.19.005;PBJT-Jasa Kesenian dan Hiburan;Pajak Barang dan Jasa Tertentu (PBJT)
+4.1.01.20;Opsen Pajak Kendaraan Bermotor (PKB);Pajak Daerah
+4.1.01.21;Opsen Bea Balik Nama Kendaraan Bermotor (BBNKB);Pajak Daerah
+4.1.02;Retribusi Daerah;
+4.1.02.01;Retribusi Jasa Umum;Retribusi Daerah
+4.1.02.01.001;Retribusi Pelayanan Kesehatan;Retribusi Jasa Umum
+4.1.02.01.001.00001;Retribusi Pelayanan Kesehatan di Puskesmas;Retribusi Pelayanan Kesehatan
+4.1.02.01.001.00006;Retribusi Pelayanan Kesehatan di Tempat Pelayanan Kesehatan Lainnya yang Sejenis;Retribusi Pelayanan Kesehatan
+4.1.02.01.002;Retribusi Pelayanan Persampahan/ Kebersihan;Retribusi Jasa Umum
+4.1.02.01.004;Retribusi Pelayanan Parkir di Tepi Jalan Umum;Retribusi Jasa Umum
+4.1.02.01.005;Retribusi Pelayanan Pasar;Retribusi Jasa Umum
+4.1.02.02;Retribusi Jasa Usaha;Retribusi Daerah
+4.1.02.02.001;Retribusi Pemakaian Kekayaan Daerah;Retribusi Jasa Usaha
+4.1.02.02.001.00001;Retribusi Penyewaan Tanah dan Bangunan;Retribusi Pemakaian Kekayaan Daerah
+4.1.02.02.001.00002;Retribusi Penyewaan Tanah;Retribusi Pemakaian Kekayaan Daerah
+4.1.02.02.001.00005;Retribusi Pemakaian Ruangan;Retribusi Pemakaian Kekayaan Daerah
+4.1.02.02.001.00006;Retribusi Pemakaian Kendaraan Bermotor;Retribusi Pemakaian Kekayaan Daerah
+4.1.02.02.001.00007;Retribusi Pemakaian Alat;Retribusi Pemakaian Kekayaan Daerah
+4.1.02.02.002;Retribusi Pasar Grosir dan/atau Pertokoan;Retribusi Jasa Usaha
+4.1.02.02.002.00001;Retribusi Penyediaan Fasilitas Pasar Grosir Berbagai Jenis Barang yang Dikontrakkan;Retribusi Pasar Grosir dan/atau Pertokoan
+4.1.02.02.002.00002;Retribusi Penyediaan Fasilitas Pasar/Pertokoan yang Dikontrakkan;Retribusi Pasar Grosir dan/atau Pertokoan
+4.1.02.02.004;Retribusi Terminal;Retribusi Jasa Usaha
+4.1.02.02.004.00001;Retribusi Pelayanan Penyediaan Tempat Parkir untuk Kendaraan Penumpang dan Bus Umum;Retribusi Terminal
+4.1.02.02.004.00002;Retribusi Pelayanan Penyediaan Tempat Kegiatan Usaha;Retribusi Terminal
+4.1.02.02.004.00003;Retribusi Pelayanan Penyediaan Fasilitas Lainnya di Lingkungan Terminal;Retribusi Terminal
+4.1.02.02.005;Retribusi Tempat Khusus Parkir;Retribusi Jasa Usaha
+4.1.02.02.007;Retribusi Rumah Potong Hewan;Retribusi Jasa Usaha
+4.1.02.02.008;Retribusi Pelayanan Kepelabuhanan;Retribusi Jasa Usaha
+4.1.02.02.009;Retribusi Tempat Rekreasi dan Olahraga;Retribusi Jasa Usaha
+4.1.02.02.011;Retribusi Penjualan Produksi Usaha Daerah;Retribusi Jasa Usaha
+4.1.02.02.011.00001;Retribusi Penjualan Produksi Hasil Usaha Daerah berupa Bibit atau Benih Tanaman;Retribusi Penjualan Produksi Usaha Daerah
+4.1.02.02.011.00003;Retribusi Penjualan Produksi hasil Usaha Daerah berupa Bibit atau Benih Ikan;Retribusi Penjualan Produksi Usaha Daerah
+4.1.02.02.011.00004;Retribusi Penjualan Produksi hasil Usaha Daerah selain Bibit atau Benih Tanaman, Ternak, dan Ikan;Retribusi Penjualan Produksi Usaha Daerah
+4.1.02.02.019;Retribusi Penjualan Hasil Produksi Usaha Pemerintah Daerah;Retribusi Jasa Usaha
+4.1.02.02.020;Retribusi Pemanfaatan Aset Daerah;Retribusi Jasa Usaha
+4.1.02.03;Retribusi Perizinan Tertentu;Retribusi Daerah
+4.1.02.03.007;Retribusi Persetujuan Bangunan Gedung;Retribusi Perizinan Tertentu
+4.1.02.03.008;Retribusi Penggunaan Tenaga Kerja Asing (TKA);Retribusi Perizinan Tertentu
+4.1.03;Hasil Pengelolaan Kekayaan Daerah yang Dipisahkan;
+4.1.03.02;Bagian Laba yang Dibagikan kepada Pemerintah Daerah (Dividen) atas Penyertaan Modal pada BUMD;Hasil Pengelolaan Kekayaan Daerah yang Dipisahkan
+4.1.04;Lain-lain PAD yang Sah;
+4.1.04.01;Hasil Penjualan BMD yang Tidak Dipisahkan;Lain-lain PAD yang Sah
+4.1.04.01.005;Hasil Penjualan Aset Tetap Lainnya;Hasil Penjualan BMD yang Tidak Dipisahkan
+4.1.04.01.005.00049;Hasil Penjualan Hewan-Ternak-Ternak Potong;Hasil Penjualan BMD yang Tidak Dipisahkan
+4.1.04.01.005.00051;Hasil Penjualan Hewan-Ternak-Ternak Unggas;Hasil Penjualan BMD yang Tidak Dipisahkan
+4.1.04.03;Hasil Pemanfaatan BMD yang Tidak Dipisahkan;Lain-lain PAD yang Sah
+4.1.04.03.001;Hasil Sewa BMD;Hasil Pemanfaatan BMD yang Tidak Dipisahkan
+4.1.04.05;Jasa Giro;Lain-lain PAD yang Sah
+4.1.04.08;Penerimaan atas Tuntutan Ganti Kerugian Keuangan Daerah;Lain-lain PAD yang Sah
+4.1.04.09;Penerimaan Komisi, Potongan, atau Bentuk Lain;Lain-lain PAD yang Sah
+4.1.04.11;Pendapatan Denda atas Keterlambatan Pelaksanaan Pekerjaan;Lain-lain PAD yang Sah
+4.1.04.12;Pendapatan Denda Pajak Daerah;Lain-lain PAD yang Sah
+4.1.04.12.009;Pendapatan Denda Pajak Reklame;Pendapatan Denda Pajak Daerah
+4.1.04.12.009.00001;Pendapatan Denda Pajak Reklame Papan/ Billboard/Videotron/Megatron;Pendapatan Denda Pajak Daerah
+4.1.04.12.010;Pendapatan Denda Pajak Penerangan Jalan;Pendapatan Denda Pajak Daerah
+4.1.04.12.010.00002;Pendapatan Denda Pajak Penerangan Jalan Sumber Lain;Pendapatan Denda Pajak Daerah
+4.1.04.12.012;Pendapatan Denda Pajak Air Tanah;Pendapatan Denda Pajak Daerah
+4.1.04.12.012.00001;Pendapatan Denda Pajak Air Tanah;Pendapatan Denda Pajak Daerah
+4.1.04.12.015;Pendapatan Denda Pajak Bumi dan Bangunan Perdesaan dan Perkotaan (PBBP2);Pendapatan Denda Pajak Daerah
+4.1.04.12.015.00001;Pendapatan Denda PBBP2;Pendapatan Denda Pajak Daerah
+4.1.04.12.019;Pendapatan Denda Pajak Barang dan Jasa Tertentu (PBJT);Pendapatan Denda Pajak Daerah
+4.1.04.12.019.00005;Pendapatan Denda PBJT-Jasa Perhotelan-Hotel;Pendapatan Denda Pajak Daerah
+4.1.04.15;Pendapatan dari Pengembalian;Lain-lain PAD yang Sah
+4.1.04.15.004;Pendapatan dari Pengembalian Kelebihan Pembayaran Perjalanan Dinas;Pendapatan dari Pengembalian
+4.1.04.15.004.00001;Pendapatan dari Pengembalian Kelebihan Pembayaran Perjalanan Dinas Dalam Negeri-Perjalanan Dinas Biasa;Pendapatan dari Pengembalian
+4.1.04.15.008;Pendapatan dari Pengembalian Kelebihan Pembayaran Belanja Gaji dan Tunjangan ASN;Pendapatan dari Pengembalian
+4.1.04.15.008.00001;Pendapatan dari Pengembalian Kelebihan Pembayaran Belanja Gaji Pokok ASN-Gaji Pokok PNS;Pendapatan dari Pengembalian
+4.1.04.16;Pendapatan BLUD;Lain-lain PAD yang Sah
+4.1.04.16.002;Pendapatan BLUD dari Jasa Layanan;Pendapatan BLUD
+4.1.04.16.002.00001;Pendapatan BLUD dari Jasa Layanan;Pendapatan BLUD
+4.1.04.16.006;Pendapatan BLUD dari Lain-Lain Pendapatan BLUD yang Sah;Pendapatan BLUD
+4.1.04.16.006.00001;Pendapatan BLUD dari Jasa Giro;Pendapatan BLUD
+4.1.04.17;Pendapatan Denda Pemanfaatan BMD yang tidak Dipisahkan;Lain-lain PAD yang Sah
+4.1.04.17.001;Pendapatan Denda Pengakhiran Sewa BMD;Pendapatan Denda Pemanfaatan BMD yang tidak Dipisahkan
+4.1.04.27;Pendapatan atas Sanksi Administrasi Pajak Daerah;Lain-lain PAD yang Sah
+4.1.04.27.001;Pendapatan Denda Pajak Daerah;Pendapatan Denda Pajak Daerah
+4.1.04.27.001.00068;Pendapatan Denda Pajak Reklame Papan/Billboard/Videotron/Megatron;Pendapatan Denda Pajak Daerah
+4.1.04.27.001.00081;Pendapatan Denda Pajak Air Tanah;Pendapatan Denda Pajak Daerah
+4.1.04.27.001.00122;Pendapatan Denda PBBP2;Pendapatan Denda Pajak Daerah
+4.1.04.27.001.00124;Pendapatan Denda BPHTB-Pemberian Hak Baru;Pendapatan Denda Pajak Daerah
+4.1.04.27.001.00127;Pendapatan Denda PBJT-Makanan dan/atau Minuman-Restoran;Pendapatan Denda Pajak Daerah
+4.1.04.27.001.00129;Pendapatan Denda PBJT-Tenaga Listrik-Konsumsi Tenaga Listrik dari Sumber Lain;Pendapatan Denda Pajak Daerah
+4.1.04.27.001.00131;Pendapatan Denda PBJT-Jasa Perhotelan-Hotel;Pendapatan Denda Pajak Daerah
+4.1.04.28;Pendapatan atas Sanksi Administrasi Retribusi Daerah;Lain-lain PAD yang Sah
+4.1.04.28.001;Pendapatan Denda Retribusi Daerah;Pendapatan atas Sanksi Administrasi Retribusi Daerah
+4.1.04.28.001.00045;Pendapatan Denda Retribusi Jasa Usaha-Pasar Grosir dan/atau Pertokoan-Penyediaan Fasilitas Pasar/Pertokoan yang Dikontrakkan;Pendapatan atas Sanksi Administrasi Retribusi Daerah
