@@ -1,0 +1,167 @@
+<?php
+
+namespace App\Filament\Pages;
+
+use Filament\Pages\Page;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Actions\Action;
+
+class LaporanEtpdPage extends Page
+{
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-credit-card';
+
+    protected static ?string $navigationLabel = 'Laporan ETPD';
+
+    protected static ?string $title = 'Laporan Realisasi ETPD (Kanal Pembayaran)';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Laporan';
+    }
+
+    protected string $view = 'filament.pages.laporan-etpd-page';
+
+    public ?array $data = [];
+
+    public function mount(): void
+    {
+        $this->form->fill([
+            'dari_bulan'     => (int) date('m'),
+            'sampai_bulan'   => (int) date('m'),
+            'tahun'          => (int) session('active_year', date('Y')),
+            'tingkat'        => 5,
+            'judul_laporan'  => 'LAPORAN REALISASI ETPD (KANAL PEMBAYARAN)',
+            'tanggal_cetak'  => now()->format('Y-m-d'),
+        ]);
+    }
+
+    public function defaultForm(Schema $schema): Schema
+    {
+        return $schema->statePath('data');
+    }
+
+    public function form(Schema $schema): Schema
+    {
+        $bulanOptions = [
+            1 => 'Januari',  2 => 'Februari', 3 => 'Maret',    4 => 'April',
+            5 => 'Mei',      6 => 'Juni',      7 => 'Juli',     8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+
+        return $schema->components([
+
+            Section::make('Filter Periode')
+                ->columns(['sm' => 2, 'md' => 4])
+                ->schema([
+                    Select::make('dari_bulan')
+                        ->label('Dari Bulan')
+                        ->options($bulanOptions)
+                        ->required()
+                        ->live(),
+                    Select::make('sampai_bulan')
+                        ->label('Sampai Bulan')
+                        ->options($bulanOptions)
+                        ->required()
+                        ->live(),
+                    Select::make('tahun')
+                        ->label('Tahun')
+                        ->options(array_combine(range(2020, 2030), range(2020, 2030)))
+                        ->required()
+                        ->live(),
+                    Select::make('tingkat')
+                        ->label('Tingkat Penerimaan')
+                        ->options([
+                            1 => 'Tingkat 1 (Akun Induk)',
+                            2 => 'Tingkat 2 (Kelompok / Sub-Induk)',
+                            3 => 'Tingkat 3 (Jenis)',
+                            4 => 'Tingkat 4 (Objek)',
+                            5 => 'Tingkat 5 (Rincian Objek & Sub-Rincian)',
+                        ])
+                        ->default(5)
+                        ->required()
+                        ->live(),
+                ]),
+
+            Section::make('Konfigurasi Header Laporan')
+                ->description('Informasi ini hanya digunakan sebagai header laporan dan tidak mengubah data master.')
+                ->columns(2)
+                ->schema([
+                    TextInput::make('nama_instansi')
+                        ->label('Nama Instansi')
+                        ->placeholder('Contoh: BPKPD Provinsi Kalimantan Tengah')
+                        ->maxLength(255),
+                    TextInput::make('alamat_instansi')
+                        ->label('Alamat / Sub-Header Instansi')
+                        ->placeholder('Contoh: Jl. R.A. Kartini No. 1, Palangka Raya')
+                        ->maxLength(255),
+                    TextInput::make('judul_laporan')
+                        ->label('Judul Laporan')
+                        ->required()
+                        ->maxLength(255),
+                    TextInput::make('sub_judul')
+                        ->label('Sub Judul (Opsional)')
+                        ->placeholder('Contoh: Rekapitulasi Berdasarkan Kanal Pembayaran')
+                        ->maxLength(255),
+                    DatePicker::make('tanggal_cetak')
+                        ->label('Tanggal Cetak')
+                        ->displayFormat('d/m/Y')
+                        ->required(),
+                    TextInput::make('penandatangan')
+                        ->label('Nama Penandatangan (Opsional)')
+                        ->placeholder('Contoh: Kepala Badan Pendapatan Daerah')
+                        ->maxLength(255),
+                ]),
+
+            Section::make('Aksi Unduh Laporan')
+                ->description('Pilih format laporan yang ingin diunduh berdasarkan filter di atas.')
+                ->headerActions([
+                    Action::make('cetakPdf')
+                        ->label('Cetak PDF')
+                        ->action('cetakPdf')
+                        ->color('primary')
+                        ->icon('heroicon-o-printer'),
+                    Action::make('downloadExcel')
+                        ->label('Download Excel')
+                        ->action('downloadExcel')
+                        ->color('success')
+                        ->icon('heroicon-o-arrow-down-tray'),
+                ]),
+
+        ]);
+    }
+
+    protected function buildQueryParams(): array
+    {
+        $state = $this->form->getState();
+
+        return array_filter([
+            'dari_bulan'     => $state['dari_bulan'],
+            'sampai_bulan'   => $state['sampai_bulan'],
+            'tahun'          => $state['tahun'],
+            'tingkat'        => $state['tingkat'] ?? 5,
+            'nama_instansi'  => $state['nama_instansi'] ?? null,
+            'alamat_instansi'=> $state['alamat_instansi'] ?? null,
+            'judul_laporan'  => $state['judul_laporan'],
+            'sub_judul'      => $state['sub_judul'] ?? null,
+            'tanggal_cetak'  => $state['tanggal_cetak'],
+            'penandatangan'  => $state['penandatangan'] ?? null,
+        ]);
+    }
+
+    public function cetakPdf(): void
+    {
+        $url = route('filament.admin.reports.laporan-etpd', $this->buildQueryParams());
+        $this->redirect($url);
+    }
+
+    public function downloadExcel(): void
+    {
+        $url = route('filament.admin.reports.laporan-etpd-excel', $this->buildQueryParams());
+        $this->redirect($url);
+    }
+}

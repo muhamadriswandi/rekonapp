@@ -52,6 +52,10 @@ class AdminPanelProvider extends PanelProvider
                     ->name('reports.laporan-konsolidasi');
                 \Illuminate\Support\Facades\Route::get('/reports/laporan-konsolidasi-excel', [LaporanKonsolidasiController::class, 'downloadExcel'])
                     ->name('reports.laporan-konsolidasi-excel');
+                \Illuminate\Support\Facades\Route::get('/reports/laporan-etpd', [\App\Http\Controllers\LaporanEtpdController::class, 'downloadPdf'])
+                    ->name('reports.laporan-etpd');
+                \Illuminate\Support\Facades\Route::get('/reports/laporan-etpd-excel', [\App\Http\Controllers\LaporanEtpdController::class, 'downloadExcel'])
+                    ->name('reports.laporan-etpd-excel');
             })
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
