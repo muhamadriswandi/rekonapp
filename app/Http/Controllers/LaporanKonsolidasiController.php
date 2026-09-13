@@ -42,9 +42,8 @@ class LaporanKonsolidasiController extends Controller
      * Build the aggregated report data structure, scoped to allowed banks.
      * Returns ['rows' => [...], 'grand_total' => float]
      */
-    private function buildReportData(Request $request, array $allowedBankIds): array
+    public function buildReportData(Request $request, array $allowedBankIds): array
     {
-
         $dariBulan   = $request->query('dari_bulan');
         $sampaiBulan = $request->query('sampai_bulan');
         $tahun       = $request->query('tahun');
@@ -83,34 +82,119 @@ class LaporanKonsolidasiController extends Controller
             ->orderBy('rb.nama_bank')
             ->get();
 
-        // Group by jenis_penerimaan
+        // Fetch all JenisPenerimaan to map ancestor hierarchy (Tingkat 1 s/d 5+)
+        $allJenis = \App\Models\JenisPenerimaan::all(['id', 'parent_id', 'kode', 'nama'])->keyBy('id');
+        $childrenOf = $allJenis->groupBy('parent_id');
+        $roots = $allJenis->filter(fn ($j) => ! $j->parent_id || ! $allJenis->has($j->parent_id))->sortBy('kode', SORT_NATURAL);
+
+        // Group transactions by jenis_penerimaan_id
+        $txByJenis = $data->groupBy('jenis_penerimaan_id');
+
+        // Recursive roll-up total calculation: node total = direct transactions + sum of children totals
+        $getNodeTotal = function ($id) use (&$getNodeTotal, $childrenOf, $txByJenis) {
+            $direct = 0;
+            $txs = $txByJenis->get($id);
+            if ($txs) {
+                $direct = (float) $txs->sum('total_nominal');
+            }
+
+            $childrenTotal = 0;
+            $children = $childrenOf->get($id, collect());
+            foreach ($children as $child) {
+                $childrenTotal += $getNodeTotal($child->id);
+            }
+
+            return $direct + $childrenTotal;
+        };
+
+        // Recursive roll-up of bank breakdown for a node and all its descendants
+        $getBankTotals = function ($id) use (&$getBankTotals, $childrenOf, $txByJenis) {
+            $bankTotals = [];
+            $txs = $txByJenis->get($id, collect());
+            foreach ($txs as $tx) {
+                $bankId = $tx->relasi_bank_id;
+                if (!isset($bankTotals[$bankId])) {
+                    $bankTotals[$bankId] = [
+                        'nama_bank'     => $tx->nama_bank,
+                        'total_nominal' => 0.0,
+                    ];
+                }
+                $bankTotals[$bankId]['total_nominal'] += (float) $tx->total_nominal;
+            }
+
+            $children = $childrenOf->get($id, collect());
+            foreach ($children as $child) {
+                $childBanks = $getBankTotals($child->id);
+                foreach ($childBanks as $bankId => $b) {
+                    if (!isset($bankTotals[$bankId])) {
+                        $bankTotals[$bankId] = [
+                            'nama_bank'     => $b['nama_bank'],
+                            'total_nominal' => 0.0,
+                        ];
+                    }
+                    $bankTotals[$bankId]['total_nominal'] += (float) $b['total_nominal'];
+                }
+            }
+
+            return $bankTotals;
+        };
+
+        $tingkat = (int) ($request->query('tingkat', 5));
+        if ($tingkat < 1) {
+            $tingkat = 5;
+        }
+
         $rows       = [];
         $grandTotal = 0;
 
-        $byJenis = $data->groupBy('jenis_penerimaan_id');
-
-        foreach ($byJenis as $jenisId => $items) {
-            $first    = $items->first();
-            $tenants  = [];
-            $subtotal = 0;
-
-            foreach ($items as $item) {
-                $tenants[] = [
-                    'nama_bank'     => $item->nama_bank,
-                    'total_nominal' => (float) $item->total_nominal,
-                ];
-                $subtotal += (float) $item->total_nominal;
+        $traverse = function ($node, $level) use (&$traverse, &$rows, $childrenOf, $getNodeTotal, $getBankTotals, $tingkat) {
+            $nodeTotal = $getNodeTotal($node->id);
+            if ($nodeTotal <= 0) {
+                return;
             }
 
-            $rows[] = [
-                'jenis_penerimaan_id' => $jenisId,
-                'kode'                => $first->kode,
-                'nama_penerimaan'     => $first->nama_penerimaan,
-                'tenants'             => $tenants,
-                'subtotal'            => $subtotal,
-            ];
+            $children = $childrenOf->get($node->id, collect())->sortBy('kode', SORT_NATURAL);
+            $hasChildren = $children->isNotEmpty();
 
-            $grandTotal += $subtotal;
+            if ($hasChildren && $level < $tingkat) {
+                // Baris Induk / Rekapitulasi Bertingkat (Roll-up TK 1, TK 2, TK 3, TK 4 dst)
+                $rows[] = [
+                    'level'           => $level,
+                    'kode'            => $node->kode,
+                    'nama'            => $node->nama,
+                    'nama_penerimaan' => $node->nama,
+                    'tenant'          => '-',
+                    'jumlah'          => $nodeTotal,
+                    'subtotal'        => $nodeTotal,
+                    'tenants'         => [],
+                ];
+
+                foreach ($children as $child) {
+                    $traverse($child, $level + 1);
+                }
+            } else {
+                // Baris Rincian / Terminal (Leaf atau Cutoff Tingkat)
+                $bankBreakdown = array_values($getBankTotals($node->id));
+
+                $rows[] = [
+                    'level'           => $level,
+                    'kode'            => $node->kode,
+                    'nama'            => $node->nama,
+                    'nama_penerimaan' => $node->nama,
+                    'tenant'          => count($bankBreakdown) === 1 ? $bankBreakdown[0]['nama_bank'] : '',
+                    'jumlah'          => $nodeTotal,
+                    'subtotal'        => $nodeTotal,
+                    'tenants'         => $bankBreakdown,
+                ];
+            }
+        };
+
+        foreach ($roots as $root) {
+            $rootTotal = $getNodeTotal($root->id);
+            if ($rootTotal > 0) {
+                $grandTotal += $rootTotal;
+                $traverse($root, 1);
+            }
         }
 
         return [
@@ -130,6 +214,7 @@ class LaporanKonsolidasiController extends Controller
         $dariBulan   = (int) $request->query('dari_bulan');
         $sampaiBulan = (int) $request->query('sampai_bulan');
         $tahun       = $request->query('tahun');
+        $tingkat     = (int) ($request->query('tingkat', 5));
 
         $periodeText = $dariBulan === $sampaiBulan
             ? $months[$dariBulan] . ' ' . $tahun
@@ -150,6 +235,7 @@ class LaporanKonsolidasiController extends Controller
             'dari_bulan_num'  => $dariBulan,
             'sampai_bulan_num'=> $sampaiBulan,
             'tahun'           => $tahun,
+            'tingkat'         => $tingkat,
         ];
     }
 
@@ -166,6 +252,7 @@ class LaporanKonsolidasiController extends Controller
             'dari_bulan'   => 'required|integer|between:1,12',
             'sampai_bulan' => 'required|integer|between:1,12',
             'tahun'        => 'required|integer',
+            'tingkat'      => 'nullable|integer|between:1,5',
         ]);
 
         $header     = $this->getHeaderData($request);
@@ -194,6 +281,7 @@ class LaporanKonsolidasiController extends Controller
             'dari_bulan'   => 'required|integer|between:1,12',
             'sampai_bulan' => 'required|integer|between:1,12',
             'tahun'        => 'required|integer',
+            'tingkat'      => 'nullable|integer|between:1,5',
         ]);
 
         $header     = $this->getHeaderData($request);
@@ -237,22 +325,30 @@ class LaporanKonsolidasiController extends Controller
         if (!empty($header['sub_judul'])) {
             $sheet->mergeCells("A{$currentRow}:D{$currentRow}");
             $sheet->setCellValue("A{$currentRow}", $header['sub_judul']);
+            $sheet->getStyle("A{$currentRow}")->getFont()->setSize(10);
             $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $currentRow++;
         }
 
+        // Periode
         $sheet->mergeCells("A{$currentRow}:D{$currentRow}");
         $sheet->setCellValue("A{$currentRow}", 'Periode: ' . $header['periode_text']);
+        $sheet->getStyle("A{$currentRow}")->getFont()->setItalic(true)->setSize(10);
         $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $currentRow++;
 
-        $currentRow++; // blank line
+        $currentRow++; // Blank row
 
-        // --- Table Header ---
+        // Meta info (Tanggal Cetak)
+        $sheet->setCellValue("A{$currentRow}", 'Tanggal Cetak: ' . $header['tanggal_cetak']);
+        $sheet->getStyle("A{$currentRow}")->getFont()->setSize(9)->setItalic(true);
+        $currentRow++;
+
+        // --- Header Tabel (4 Kolom) ---
         $headerRowIndex = $currentRow;
         $sheet->setCellValue("A{$currentRow}", 'Kode Penerimaan');
         $sheet->setCellValue("B{$currentRow}", 'Nama Penerimaan');
-        $sheet->setCellValue("C{$currentRow}", 'Nama Tenant');
+        $sheet->setCellValue("C{$currentRow}", 'Tenant');
         $sheet->setCellValue("D{$currentRow}", 'Jumlah (Rp)');
 
         $headerStyle = [
@@ -269,6 +365,19 @@ class LaporanKonsolidasiController extends Controller
         $dataBorderStyle = [
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'D0D0D0']]],
         ];
+
+        $level1Style = [
+            'font'    => ['bold' => true, 'color' => ['rgb' => '1A3A5C']],
+            'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D6E8F5']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '2C5F8A']]],
+        ];
+
+        $level2Style = [
+            'font'    => ['bold' => true, 'color' => ['rgb' => '2C5F8A']],
+            'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F0F5FA']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'D0D0D0']]],
+        ];
+
         $subtotalFillStyle = [
             'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'EAF2FB']],
             'font'    => ['bold' => true],
@@ -276,40 +385,54 @@ class LaporanKonsolidasiController extends Controller
         ];
 
         foreach ($rows as $row) {
-            $firstTenantRow = $currentRow;
+            $indentSpaces = str_repeat('  ', max(0, $row['level'] - 1));
+            $displayName = $indentSpaces . ($row['level'] === 1 ? strtoupper($row['nama_penerimaan']) : $row['nama_penerimaan']);
 
-            // Tenant rows
-            foreach ($row['tenants'] as $index => $tenant) {
-                if ($index === 0) {
-                    $sheet->setCellValue("A{$currentRow}", $row['kode']);
-                    $sheet->setCellValue("B{$currentRow}", $row['nama_penerimaan']);
-                } else {
-                    $sheet->setCellValue("A{$currentRow}", '');
-                    $sheet->setCellValue("B{$currentRow}", '');
-                }
-                $sheet->setCellValue("C{$currentRow}", $tenant['nama_bank']);
-                $sheet->setCellValue("D{$currentRow}", $tenant['total_nominal']);
+            if (empty($row['tenants'])) {
+                // Baris Induk / Rekapitulasi Bertingkat (Level 1, 2, 3, 4 dst)
+                $sheet->setCellValue("A{$currentRow}", $row['kode']);
+                $sheet->setCellValue("B{$currentRow}", $displayName);
+                $sheet->setCellValue("C{$currentRow}", '-');
+                $sheet->setCellValue("D{$currentRow}", $row['jumlah']);
                 $sheet->getStyle("D{$currentRow}")->getNumberFormat()->setFormatCode('#,##0');
-                $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray($dataBorderStyle);
+
+                if ($row['level'] === 1) {
+                    $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray($level1Style);
+                } elseif ($row['level'] === 2) {
+                    $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray($level2Style);
+                } else {
+                    $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray([
+                        'font'    => ['bold' => true, 'color' => ['rgb' => '2C5F8A']],
+                        'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F8FAFC']],
+                        'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'D0D0D0']]],
+                    ]);
+                }
                 $currentRow++;
-            }
+            } else {
+                // Baris Rincian / Terminal dengan breakdown tenant / bank
+                $firstTenantRow = $currentRow;
+                foreach ($row['tenants'] as $index => $tenant) {
+                    if ($index === 0) {
+                        $sheet->setCellValue("A{$currentRow}", $row['kode']);
+                        $sheet->setCellValue("B{$currentRow}", $displayName);
+                    } else {
+                        $sheet->setCellValue("A{$currentRow}", '');
+                        $sheet->setCellValue("B{$currentRow}", '');
+                    }
+                    $sheet->setCellValue("C{$currentRow}", $tenant['nama_bank']);
+                    $sheet->setCellValue("D{$currentRow}", $tenant['total_nominal']);
+                    $sheet->getStyle("D{$currentRow}")->getNumberFormat()->setFormatCode('#,##0');
+                    $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray($dataBorderStyle);
+                    $currentRow++;
+                }
 
-            // Merge kode and nama if multiple tenants
-            if (count($row['tenants']) > 1) {
-                $lastTenantRow = $currentRow - 1;
-                $sheet->mergeCells("A{$firstTenantRow}:A{$lastTenantRow}");
-                $sheet->mergeCells("B{$firstTenantRow}:B{$lastTenantRow}");
-                $sheet->getStyle("A{$firstTenantRow}:B{$lastTenantRow}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                if (count($row['tenants']) > 1) {
+                    $lastTenantRow = $currentRow - 1;
+                    $sheet->mergeCells("A{$firstTenantRow}:A{$lastTenantRow}");
+                    $sheet->mergeCells("B{$firstTenantRow}:B{$lastTenantRow}");
+                    $sheet->getStyle("A{$firstTenantRow}:B{$lastTenantRow}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                }
             }
-
-            // Subtotal row
-            $sheet->setCellValue("A{$currentRow}", '');
-            $sheet->setCellValue("B{$currentRow}", 'Subtotal ' . $row['nama_penerimaan']);
-            $sheet->setCellValue("C{$currentRow}", '');
-            $sheet->setCellValue("D{$currentRow}", $row['subtotal']);
-            $sheet->getStyle("D{$currentRow}")->getNumberFormat()->setFormatCode('#,##0');
-            $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray($subtotalFillStyle);
-            $currentRow++;
         }
 
         // --- Grand Total ---
@@ -323,7 +446,7 @@ class LaporanKonsolidasiController extends Controller
         $sheet->setCellValue("D{$currentRow}", $grandTotal);
         $sheet->getStyle("D{$currentRow}")->getNumberFormat()->setFormatCode('#,##0');
         $sheet->getStyle("A{$currentRow}:D{$currentRow}")->applyFromArray($grandTotalStyle);
-        $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle("A{$currentRow}:D{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->getRowDimension($currentRow)->setRowHeight(22);
 
         // --- Penandatangan ---
@@ -346,8 +469,8 @@ class LaporanKonsolidasiController extends Controller
         }
 
         // --- Column Widths ---
-        $sheet->getColumnDimension('A')->setWidth(18);
-        $sheet->getColumnDimension('B')->setWidth(40);
+        $sheet->getColumnDimension('A')->setWidth(20);
+        $sheet->getColumnDimension('B')->setWidth(42);
         $sheet->getColumnDimension('C')->setWidth(25);
         $sheet->getColumnDimension('D')->setWidth(22);
 

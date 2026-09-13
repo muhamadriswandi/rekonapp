@@ -20,29 +20,45 @@ class LaporanPenerimaanController extends Controller
             'sampai_bulan' => 'required|integer|between:1,12|gte:dari_bulan',
             'tahun' => 'required|integer',
             'instansi_id' => 'nullable|integer',
+            'bank_id' => 'nullable|string',
         ]);
 
         $dariBulan = $request->query('dari_bulan');
         $sampaiBulan = $request->query('sampai_bulan');
         $tahun = $request->query('tahun');
         $instansiId = $request->query('instansi_id');
+        $bankId = $request->query('bank_id');
 
         $instansi = $instansiId ? Instansi::find($instansiId) : null;
         $namaInstansi = $instansi ? $instansi->nama_instansi : 'Konsolidasi (Semua Instansi)';
 
+        if ($bankId === 'all') {
+            $selectedBank = null;
+            $namaBank = 'Semua Bank (Konsolidasi Multi-Bank)';
+        } elseif (!empty($bankId)) {
+            $selectedBank = RelasiBank::find($bankId);
+            $namaBank = $selectedBank ? $selectedBank->nama_bank : 'Semua Bank';
+        } else {
+            // Default to active tenant if bank_id not specified
+            $selectedBank = $activeTenant;
+            $namaBank = $activeTenant->nama_bank;
+        }
+
         // Fetch transaction details
         $query = DB::table('transaksi_rincian as tr')
             ->join('transaksi as t', 'tr.transaksi_id', '=', 't.id')
+            ->join('relasi_bank as rb', 't.relasi_bank_id', '=', 'rb.id')
             ->leftJoin('periode_pembukuan as pp', 't.periode_pembukuan_id', '=', 'pp.id')
             ->join('jenis_penerimaan as jp', 'tr.jenis_penerimaan_id', '=', 'jp.id')
             ->leftJoin('instansi as i', 't.instansi_id', '=', 'i.id')
             ->select([
                 't.tanggal_transaksi',
+                't.deskripsi',
                 'jp.nama as nama_penerimaan',
                 'tr.nominal',
-                'i.nama_instansi'
+                'i.nama_instansi',
+                'rb.nama_bank'
             ])
-            ->where('t.relasi_bank_id', $activeTenant->id)
             ->where('t.status', 'Posted')
             ->where(function ($query) use ($tahun, $dariBulan, $sampaiBulan) {
                 $query->where(function ($q) use ($tahun, $dariBulan, $sampaiBulan) {
@@ -56,6 +72,10 @@ class LaporanPenerimaanController extends Controller
                         ->whereMonth('t.tanggal_transaksi', '<=', $sampaiBulan);
                 });
             });
+
+        if ($selectedBank) {
+            $query->where('t.relasi_bank_id', $selectedBank->id);
+        }
 
         if ($instansiId) {
             $query->where('t.instansi_id', $instansiId);
@@ -77,13 +97,15 @@ class LaporanPenerimaanController extends Controller
 
         $pdf = Pdf::loadView('reports.laporan-penerimaan', [
             'tenant' => $activeTenant,
+            'namaBank' => $namaBank,
+            'selectedBank' => $selectedBank,
             'dariBulan' => $months[$dariBulan],
             'sampaiBulan' => $months[$sampaiBulan],
             'tahun' => $tahun,
             'namaInstansi' => $namaInstansi,
             'groupedData' => $groupedData,
             'totalNominal' => $totalNominal,
-        ]);
+        ])->setPaper('a4', 'landscape');
 
         $filename = "laporan_penerimaan_{$dariBulan}_to_{$sampaiBulan}_{$tahun}.pdf";
 

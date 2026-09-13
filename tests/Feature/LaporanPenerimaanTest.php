@@ -157,6 +157,7 @@ test('laporan penerimaan page redirects to pdf export route', function () {
             'dari_bulan' => 6,
             'sampai_bulan' => 6,
             'tahun' => 2026,
+            'bank_id' => $this->tenant->id,
             'instansi_id' => $instansi->id,
         ])
         ->call('cetakPdf')
@@ -165,8 +166,64 @@ test('laporan penerimaan page redirects to pdf export route', function () {
             'dari_bulan' => 6,
             'sampai_bulan' => 6,
             'tahun' => 2026,
+            'bank_id' => $this->tenant->id,
             'instansi_id' => $instansi->id,
         ]));
+});
+
+test('laporan penerimaan page can show multi-tenant records when bank filter is cleared', function () {
+    $t1 = Transaksi::create([
+        'relasi_bank_id' => $this->tenant->id,
+        'tanggal_transaksi' => '2026-06-15',
+        'nominal' => 50000,
+        'status' => 'Posted',
+        'tipe_mutasi' => 'D'
+    ]);
+    $r1 = TransaksiRincian::create([
+        'transaksi_id' => $t1->id,
+        'jenis_penerimaan_id' => $this->jenis->id,
+        'nominal' => 50000
+    ]);
+
+    $otherTenant = RelasiBank::create([
+        'kode_bank' => 'BANK_2',
+        'nama_bank' => 'Bank 2'
+    ]);
+    $t2 = Transaksi::create([
+        'relasi_bank_id' => $otherTenant->id,
+        'tanggal_transaksi' => '2026-06-15',
+        'nominal' => 75000,
+        'status' => 'Posted',
+        'tipe_mutasi' => 'D'
+    ]);
+    $r2 = TransaksiRincian::create([
+        'transaksi_id' => $t2->id,
+        'jenis_penerimaan_id' => $this->jenis->id,
+        'nominal' => 75000
+    ]);
+
+    // When bank_id is null ("Semua Bank"), both records from both banks should be visible
+    Livewire::test(LaporanPenerimaanPage::class)
+        ->fillForm([
+            'dari_bulan' => 6,
+            'sampai_bulan' => 6,
+            'tahun' => 2026,
+            'bank_id' => null,
+            'instansi_id' => null,
+        ])
+        ->assertCanSeeTableRecords([$r1, $r2]);
+
+    // When bank_id is set to $otherTenant, only $r2 is visible
+    Livewire::test(LaporanPenerimaanPage::class)
+        ->fillForm([
+            'dari_bulan' => 6,
+            'sampai_bulan' => 6,
+            'tahun' => 2026,
+            'bank_id' => $otherTenant->id,
+            'instansi_id' => null,
+        ])
+        ->assertCanSeeTableRecords([$r2])
+        ->assertCanNotSeeTableRecords([$r1]);
 });
 
 test('download pdf route returns pdf download response', function () {
@@ -185,15 +242,29 @@ test('download pdf route returns pdf download response', function () {
         'nominal' => 50000
     ]);
 
+    // Test with specific bank
     $response = $this->get(route('filament.admin.reports.laporan-penerimaan', [
         'tenant' => $this->tenant->id,
         'dari_bulan' => 6,
         'sampai_bulan' => 6,
         'tahun' => 2026,
+        'bank_id' => $this->tenant->id,
     ]));
 
     $response->assertStatus(200);
     $response->assertHeader('content-type', 'application/pdf');
     $response->assertHeader('content-disposition', 'attachment; filename=laporan_penerimaan_6_to_6_2026.pdf');
+
+    // Test with multi-tenant (bank_id = all)
+    $responseAll = $this->get(route('filament.admin.reports.laporan-penerimaan', [
+        'tenant' => $this->tenant->id,
+        'dari_bulan' => 6,
+        'sampai_bulan' => 6,
+        'tahun' => 2026,
+        'bank_id' => 'all',
+    ]));
+
+    $responseAll->assertStatus(200);
+    $responseAll->assertHeader('content-type', 'application/pdf');
 });
 

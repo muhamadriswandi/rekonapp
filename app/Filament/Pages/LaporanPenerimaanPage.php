@@ -38,6 +38,7 @@ class LaporanPenerimaanPage extends Page implements HasTable
             'dari_bulan' => (int) date('m'),
             'sampai_bulan' => (int) date('m'),
             'tahun' => (int) session('active_year', date('Y')),
+            'bank_id' => Filament::getTenant()?->id,
         ]);
     }
 
@@ -51,7 +52,7 @@ class LaporanPenerimaanPage extends Page implements HasTable
         return $schema
             ->components([
                 Section::make('Filter Laporan')
-                    ->columns(4)
+                    ->columns(['sm' => 2, 'md' => 3, 'xl' => 5])
                     ->schema([
                         Select::make('dari_bulan')
                             ->label('Dari Bulan')
@@ -71,16 +72,22 @@ class LaporanPenerimaanPage extends Page implements HasTable
                             ])
                             ->required()
                             ->live(),
+                        Select::make('tahun')
+                            ->label('Tahun')
+                            ->options(array_combine(range(2020, 2030), range(2020, 2030)))
+                            ->required()
+                            ->live(),
+                        Select::make('bank_id')
+                            ->label('Bank')
+                            ->options(\App\Models\RelasiBank::pluck('nama_bank', 'id'))
+                            ->placeholder('Semua Bank')
+                            ->nullable()
+                            ->live(),
                         Select::make('instansi_id')
                             ->label('Instansi')
                             ->options(\App\Models\Instansi::pluck('nama_instansi', 'id'))
                             ->placeholder('Semua Instansi')
                             ->nullable()
-                            ->live(),
-                        Select::make('tahun')
-                            ->label('Tahun')
-                            ->options(array_combine(range(2020, 2030), range(2020, 2030)))
-                            ->required()
                             ->live(),
                     ])
                     ->headerActions([
@@ -100,13 +107,13 @@ class LaporanPenerimaanPage extends Page implements HasTable
                 $dariBulan = $this->data['dari_bulan'] ?? date('m');
                 $sampaiBulan = $this->data['sampai_bulan'] ?? date('m');
                 $tahun = $this->data['tahun'] ?? session('active_year', date('Y'));
+                $bankId = $this->data['bank_id'] ?? null;
                 $instansiId = $this->data['instansi_id'] ?? null;
 
                 $query = TransaksiRincian::query()
                     ->select('transaksi_rincian.*')
                     ->join('transaksi', 'transaksi_rincian.transaksi_id', '=', 'transaksi.id')
                     ->leftJoin('periode_pembukuan', 'transaksi.periode_pembukuan_id', '=', 'periode_pembukuan.id')
-                    ->where('transaksi.relasi_bank_id', Filament::getTenant()->id)
                     ->where('transaksi.status', 'Posted')
                     ->where(function ($q) use ($tahun, $dariBulan, $sampaiBulan) {
                         $q->where(function ($sub) use ($tahun, $dariBulan, $sampaiBulan) {
@@ -120,6 +127,10 @@ class LaporanPenerimaanPage extends Page implements HasTable
                                 ->whereMonth('transaksi.tanggal_transaksi', '<=', $sampaiBulan);
                         });
                     });
+
+                if ($bankId) {
+                    $query->where('transaksi.relasi_bank_id', $bankId);
+                }
                 
                 if ($instansiId) {
                     $query->where('transaksi.instansi_id', $instansiId);
@@ -136,10 +147,18 @@ class LaporanPenerimaanPage extends Page implements HasTable
                     ->titlePrefixedWithLabel(false)
             ])
             ->columns([
+                TextColumn::make('index')
+                    ->rowIndex()
+                    ->label('No'),
                 TextColumn::make('transaksi.tanggal_transaksi')
-                    ->date()
+                    ->date('d/m/Y')
                     ->sortable()
                     ->label('Tanggal'),
+                TextColumn::make('transaksi.deskripsi')
+                    ->label('Deskripsi')
+                    ->placeholder('-')
+                    ->wrap()
+                    ->searchable(),
                 TextColumn::make('transaksi.instansi.nama_instansi')
                     ->label('Instansi')
                     ->placeholder('-')
@@ -153,9 +172,14 @@ class LaporanPenerimaanPage extends Page implements HasTable
                             ->money('idr')
                             ->label('Total')
                     ),
+                TextColumn::make('transaksi.relasiBank.nama_bank')
+                    ->label('Bank')
+                    ->badge()
+                    ->color('info')
+                    ->sortable(),
             ])
             ->emptyStateHeading('Tidak Ada Laporan Penerimaan')
-            ->emptyStateDescription('Tidak ada rincian transaksi berstatus Posted pada tenant, bulan, dan instansi terpilih.');
+            ->emptyStateDescription('Tidak ada rincian transaksi berstatus Posted pada bank, bulan, dan instansi terpilih.');
     }
 
     public function cetakPdf(): void
@@ -165,15 +189,22 @@ class LaporanPenerimaanPage extends Page implements HasTable
         $dariBulan = $state['dari_bulan'];
         $sampaiBulan = $state['sampai_bulan'];
         $tahun = $state['tahun'];
+        $bankId = $state['bank_id'] ?? null;
         $instansiId = $state['instansi_id'] ?? null;
 
-        $url = route('filament.admin.reports.laporan-penerimaan', array_filter([
+        $params = [
             'tenant' => Filament::getTenant()->id,
             'dari_bulan' => $dariBulan,
             'sampai_bulan' => $sampaiBulan,
             'tahun' => $tahun,
-            'instansi_id' => $instansiId,
-        ]));
+            'bank_id' => $bankId ?: 'all',
+        ];
+
+        if ($instansiId) {
+            $params['instansi_id'] = $instansiId;
+        }
+
+        $url = route('filament.admin.reports.laporan-penerimaan', $params);
 
         $this->redirect($url);
     }

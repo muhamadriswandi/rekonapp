@@ -110,25 +110,52 @@
         .data-table td.kode {
             font-weight: bold;
             color: #1A3A5C;
-            width: 14%;
             white-space: nowrap;
+            width: 18%;
         }
         .data-table td.nama {
-            width: 32%;
+            width: 42%;
         }
         .data-table td.tenant {
-            width: 25%;
+            width: 20%;
         }
         .data-table td.jumlah {
             width: 20%;
         }
 
-        /* ---- Subtotal row ---- */
-        .subtotal-row td {
-            background-color: #d6e8f5 !important;
+        /* ---- Level Styling ---- */
+        .level-1-row td {
+            background-color: #dce8f2 !important;
             font-weight: bold;
+            color: #102a45;
             border-top: 1.5px solid #2C5F8A;
             border-bottom: 1.5px solid #2C5F8A;
+        }
+        .level-2-row td {
+            background-color: #eef5fa !important;
+            font-weight: 600;
+            color: #1a3a5c;
+            border-top: 1px solid #b8d1e5;
+            border-bottom: 1px solid #b8d1e5;
+        }
+        .level-parent-row td {
+            background-color: #f8fafc !important;
+            font-weight: 600;
+            color: #1a3a5c;
+            border-top: 1px solid #d0dbe5;
+            border-bottom: 1px solid #d0dbe5;
+        }
+        .level-leaf-row td {
+            background-color: #ffffff;
+        }
+
+        /* ---- Subtotal row ---- */
+        .subtotal-row td {
+            background-color: #f1f5f9 !important;
+            font-weight: bold;
+            font-style: italic;
+            border-top: 1px dashed #b0c4de;
+            border-bottom: 1px solid #c8d5e0;
         }
 
         /* ---- Grand Total ---- */
@@ -178,7 +205,7 @@
 </head>
 <body>
 
-    {{-- ====== HEADER ====== --}}
+    {{-- ====== HEADER INSTANSI ====== --}}
     <div class="report-header">
         @if(!empty($nama_instansi))
             <p class="instansi-name">{{ $nama_instansi }}</p>
@@ -212,40 +239,56 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th style="width: 13%;">Kode Penerimaan</th>
-                <th style="width: 35%;">Nama Penerimaan</th>
-                <th style="width: 28%;">Nama Tenant</th>
-                <th class="right" style="width: 24%;">Jumlah (Rp)</th>
+                <th style="width: 18%;">Kode Penerimaan</th>
+                <th style="width: 42%;">Nama Penerimaan</th>
+                <th style="width: 20%;">Tenant</th>
+                <th class="right" style="width: 20%;">Jumlah (Rp)</th>
             </tr>
         </thead>
         <tbody>
-            @php $grandTotal = 0; @endphp
-
             @forelse($rows as $row)
-                @php $grandTotal += $row['subtotal']; @endphp
+                @php
+                    $padding = max(0, ($row['level'] - 1) * 12);
+                    $isParent = empty($row['tenants']);
+                @endphp
 
-                @foreach($row['tenants'] as $tenantIndex => $tenant)
-                    <tr class="data-row">
-                        {{-- Kode & Nama hanya muncul di baris pertama tiap kode penerimaan --}}
-                        <td class="kode">
-                            @if($tenantIndex === 0) {{ $row['kode'] }} @endif
+                @if($isParent)
+                    {{-- Baris Induk / Rekapitulasi Bertingkat (Level 1, 2, 3, 4, 5 dst) --}}
+                    <tr class="{{ $row['level'] === 1 ? 'level-1-row' : ($row['level'] === 2 ? 'level-2-row' : 'level-parent-row') }}">
+                        <td class="kode">{{ $row['kode'] }}</td>
+                        <td class="nama" style="padding-left: {{ $padding }}px;">
+                            @if($row['level'] === 1)
+                                <strong>{{ strtoupper($row['nama']) }}</strong>
+                            @elseif($row['level'] === 2)
+                                <strong>{{ $row['nama'] }}</strong>
+                            @else
+                                <span style="font-weight: 600;">{{ $row['nama'] }}</span>
+                            @endif
                         </td>
-                        <td class="nama">
-                            @if($tenantIndex === 0) {{ $row['nama_penerimaan'] }} @endif
+                        <td class="tenant" style="text-align: center;">-</td>
+                        <td class="number jumlah">
+                            @if($row['level'] === 1)
+                                <strong>{{ number_format($row['subtotal'], 0, ',', '.') }}</strong>
+                            @else
+                                {{ number_format($row['subtotal'], 0, ',', '.') }}
+                            @endif
                         </td>
-                        <td class="tenant">{{ $tenant['nama_bank'] }}</td>
-                        <td class="number jumlah">{{ number_format($tenant['total_nominal'], 0, ',', '.') }}</td>
                     </tr>
-                @endforeach
-
-                {{-- Subtotal per kode penerimaan --}}
-                <tr class="subtotal-row">
-                    <td colspan="2" style="text-align: right; padding-right: 10px;">
-                        Subtotal {{ $row['nama_penerimaan'] }}
-                    </td>
-                    <td></td>
-                    <td class="number">{{ number_format($row['subtotal'], 0, ',', '.') }}</td>
-                </tr>
+                @else
+                    {{-- Baris Rincian Objek Penerimaan dengan breakdown Tenant / Bank --}}
+                    @foreach($row['tenants'] as $tenantIndex => $tenant)
+                        <tr class="data-row level-leaf-row">
+                            <td class="kode">
+                                @if($tenantIndex === 0) {{ $row['kode'] }} @endif
+                            </td>
+                            <td class="nama" style="padding-left: {{ $padding }}px;">
+                                @if($tenantIndex === 0) {{ $row['nama'] }} @endif
+                            </td>
+                            <td class="tenant">{{ $tenant['nama_bank'] }}</td>
+                            <td class="number jumlah">{{ number_format($tenant['total_nominal'], 0, ',', '.') }}</td>
+                        </tr>
+                    @endforeach
+                @endif
 
             @empty
                 <tr>

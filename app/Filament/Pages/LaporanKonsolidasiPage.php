@@ -34,6 +34,7 @@ class LaporanKonsolidasiPage extends Page
             'dari_bulan'     => (int) date('m'),
             'sampai_bulan'   => (int) date('m'),
             'tahun'          => (int) session('active_year', date('Y')),
+            'tingkat'        => 5,
             'judul_laporan'  => 'LAPORAN REKAPITULASI PENERIMAAN DAERAH',
             'tanggal_cetak'  => now()->format('Y-m-d'),
         ]);
@@ -55,7 +56,7 @@ class LaporanKonsolidasiPage extends Page
         return $schema->components([
 
             Section::make('Filter Periode')
-                ->columns(3)
+                ->columns(['sm' => 2, 'md' => 4])
                 ->schema([
                     Select::make('dari_bulan')
                         ->label('Dari Bulan')
@@ -70,6 +71,18 @@ class LaporanKonsolidasiPage extends Page
                     Select::make('tahun')
                         ->label('Tahun')
                         ->options(array_combine(range(2020, 2030), range(2020, 2030)))
+                        ->required()
+                        ->live(),
+                    Select::make('tingkat')
+                        ->label('Tingkat Penerimaan')
+                        ->options([
+                            1 => 'Tingkat 1 (Akun Induk)',
+                            2 => 'Tingkat 2 (Kelompok / Sub-Induk)',
+                            3 => 'Tingkat 3 (Jenis)',
+                            4 => 'Tingkat 4 (Objek)',
+                            5 => 'Tingkat 5 (Rincian Objek & Sub-Rincian)',
+                        ])
+                        ->default(5)
                         ->required()
                         ->live(),
                 ]),
@@ -128,6 +141,7 @@ class LaporanKonsolidasiPage extends Page
             'dari_bulan'     => $state['dari_bulan'],
             'sampai_bulan'   => $state['sampai_bulan'],
             'tahun'          => $state['tahun'],
+            'tingkat'        => $state['tingkat'] ?? 3,
             'nama_instansi'  => $state['nama_instansi'] ?? null,
             'alamat_instansi'=> $state['alamat_instansi'] ?? null,
             'judul_laporan'  => $state['judul_laporan'],
