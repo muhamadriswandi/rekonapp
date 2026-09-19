@@ -31,6 +31,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->login(\App\Filament\Pages\Auth\CustomLogin::class)
             ->tenant(RelasiBank::class)
             ->plugin(\BezhanSalleh\FilamentShield\FilamentShieldPlugin::make()
@@ -38,8 +39,18 @@ class AdminPanelProvider extends PanelProvider
             ->plugin(FilamentRightClickPlugin::make())
             ->resourceEditPageRedirect('index')
             ->maxContentWidth(Width::Full)
+            ->font('Plus Jakarta Sans')
+            ->sidebarCollapsibleOnDesktop()
+            ->brandName("Pipakatan")
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::rgb('rgb(14, 42, 71)'),    // Primary Deep Navy
+                'secondary' => Color::rgb('rgb(30, 76, 124)'), // Secondary Mid Navy
+                'warning' => Color::rgb('rgb(201, 162, 39)'),  // Accent Rich Gold
+                'gray' => Color::rgb('rgb(242, 239, 232)'),    // Neutral Warm Alabaster
+                'info' => Color::rgb('rgb(30, 76, 124)'),
+                'success' => Color::Emerald,
+                'danger' => Color::Rose,
+                ''
             ])
             ->tenantRoutes(function () {
                 \Illuminate\Support\Facades\Route::get('/reports/laporan-harian', [\App\Http\Controllers\LaporanHarianController::class, 'downloadPdf'])

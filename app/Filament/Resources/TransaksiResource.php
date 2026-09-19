@@ -211,6 +211,8 @@ class TransaksiResource extends Resource
                     ->placeholder('-'),
                 Tables\Columns\TextColumn::make('rincian.jenisPenerimaan.nama')
                     ->label('Jenis Penerimaan')
+                    ->badge()        
+                    ->listWithLineBreaks()
                     ->placeholder('-'),
                 Tables\Columns\TextColumn::make('instansi.nama_instansi')
                     ->label('Instansi')

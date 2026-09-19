@@ -57,11 +57,12 @@ public function table(Table $table): Table
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+            ->color('warning'),
             Actions\Action::make('uploadCsvLengkap')
                 ->label('Upload CSV Lengkap')
                 ->icon('heroicon-o-document-arrow-up')
-                ->color('success')
+                ->color('warning')
                 ->visible(fn () => \Illuminate\Support\Facades\Gate::allows('uploadCsv', Transaksi::class))
                 ->modalHeading('Upload File CSV Transaksi Lengkap')
                 ->modalDescription('Impor data transaksi beserta rincian rekening penerimaan dalam satu file CSV.')
@@ -107,6 +108,7 @@ public function table(Table $table): Table
                 ->visible(fn () => \Illuminate\Support\Facades\Gate::allows('uploadCsv', Transaksi::class))
                 ->modalHeading('Upload File CSV Transaksi')
                 ->modalSubmitActionLabel('Impor')
+                ->color('warning')
                 ->schema([
                     FileUpload::make('csv_file')
                         ->label('Pilih File CSV')
